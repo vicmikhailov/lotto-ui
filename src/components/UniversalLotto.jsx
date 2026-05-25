@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -10,6 +10,11 @@ const ballActive =
   'bg-gradient-to-br from-white via-slate-100 to-slate-300 text-slate-700 ' +
   '[box-shadow:inset_2px_3px_8px_rgba(255,255,255,0.95),inset_-2px_-3px_6px_rgba(0,0,0,0.2),0_4px_10px_rgba(0,0,0,0.2)]'
 
+const ballGold =
+  'size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
+  'bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-600 text-amber-950 ' +
+  '[box-shadow:inset_2px_3px_8px_rgba(255,255,255,0.8),inset_-2px_-3px_6px_rgba(0,0,0,0.3),0_4px_10px_rgba(0,0,0,0.3)]'
+
 const ballInactive =
   'size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
   'bg-gradient-to-br from-muted/50 via-muted/30 to-muted/10 text-muted-foreground/40 ' +
@@ -17,16 +22,6 @@ const ballInactive =
 
 const getDefaultValues = (totalEntries) =>
   Array.from({ length: totalEntries }, (_, i) => (i + 1).toString())
-
-const generateUniqueRandomValues = (totalEntries, maxValue) => {
-  const generatedValues = new Set()
-
-  while (generatedValues.size < totalEntries) {
-    generatedValues.add(Math.floor(Math.random() * maxValue) + 1)
-  }
-
-  return Array.from(generatedValues, (value) => value.toString())
-}
 
 const getCountBadgeClass = (count) => {
   if (count <= 2) return ''
@@ -50,12 +45,16 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
 
   const [values, setValues] = useState(() => getDefaultValues(finalEntries))
   const [activeEntries, setActiveEntries] = useState(() => Array.from({ length: finalEntries }, () => false))
+  const [goldenBallIndex, setGoldenBallIndex] = useState(null)
+  const [isLocked, setIsLocked] = useState(true)
   const [showValidationMessage, setShowValidationMessage] = useState(false)
   const [prevEntries, setPrevEntries] = useState(finalEntries)
 
   if (finalEntries !== prevEntries) {
     setValues(getDefaultValues(finalEntries))
     setActiveEntries(Array.from({ length: finalEntries }, () => false))
+    setGoldenBallIndex(null)
+    setIsLocked(true)
     setShowValidationMessage(false)
     setPrevEntries(finalEntries)
   }
@@ -81,8 +80,8 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
     })
   }, [])
 
+  const anyEntryFilled = useMemo(() => values.some((value) => value !== ''), [values])
   const allEntriesFilled = useMemo(() => values.every((value) => value !== ''), [values])
-  const allEntriesEmpty = useMemo(() => values.every((value) => value === ''), [values])
 
   // Single pass calculation of duplicate and out-of-range indices
   const { duplicateIndices, outOfRangeIndices, hasValidationErrors } = useMemo(() => {
@@ -115,8 +114,6 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
     }
   }, [values, maxAllowedValue])
 
-  const canUseButtonMode = allEntriesFilled && !hasValidationErrors
-
   const validationMessages = useMemo(() => {
     return [
       duplicateIndices.size > 0 ? 'Entries must not contain duplicate numbers.' : null,
@@ -124,48 +121,78 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
     ].filter(Boolean)
   }, [duplicateIndices.size, outOfRangeIndices.size, maxAllowedValue])
 
-  const shouldShowValidationMessage = hasValidationErrors && (allEntriesFilled || showValidationMessage)
-
-  useEffect(() => {
-    if (!hasValidationErrors || allEntriesFilled) {
-      return undefined
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      setShowValidationMessage(true)
-    }, 5000)
-
-    return () => {
-      window.clearTimeout(timeoutId)
-    }
-  }, [allEntriesFilled, hasValidationErrors, values])
+  const shouldShowValidationMessage = hasValidationErrors && showValidationMessage
 
   const handleToggle = useCallback((index) => {
-    if (!allEntriesFilled || hasValidationErrors) {
+    if (!isLocked) {
       return
     }
 
     setActiveEntries((currentActiveEntries) => {
       const nextActiveEntries = [...currentActiveEntries]
-      nextActiveEntries[index] = !nextActiveEntries[index]
+      const nextActive = !nextActiveEntries[index]
+      nextActiveEntries[index] = nextActive
+
+      if (!nextActive && goldenBallIndex === index) {
+        setGoldenBallIndex(null)
+      }
       return nextActiveEntries
     })
+  }, [isLocked, goldenBallIndex])
+
+  const handleDoubleToggle = useCallback((index) => {
+    if (!isLocked) {
+      return
+    }
+
+    setActiveEntries((currentActiveEntries) => {
+      const nextActiveEntries = [...currentActiveEntries]
+      nextActiveEntries[index] = true
+      return nextActiveEntries
+    })
+    setGoldenBallIndex(index)
+  }, [isLocked])
+
+  const handleSet = useCallback(() => {
+    if (!allEntriesFilled) return
+
+    if (hasValidationErrors) {
+      setShowValidationMessage(true)
+    } else {
+      setIsLocked(true)
+      setShowValidationMessage(false)
+    }
   }, [allEntriesFilled, hasValidationErrors])
+
+  const handleEdit = useCallback(() => {
+    setShowValidationMessage(false)
+    setActiveEntries(Array.from({ length: finalEntries }, () => false))
+    setGoldenBallIndex(null)
+    setIsLocked(false)
+  }, [finalEntries])
 
   const handleReset = useCallback(() => {
     setShowValidationMessage(false)
     setValues(Array.from({ length: finalEntries }, () => ''))
     setActiveEntries(Array.from({ length: finalEntries }, () => false))
+    setGoldenBallIndex(null)
+    setIsLocked(false)
   }, [finalEntries])
 
   const handleRandom = useCallback(() => {
+    const pool = Array.from({ length: maxAllowedValue }, (_, i) => i + 1)
+    const result = []
+    for (let i = 0; i < finalEntries && pool.length > 0; i++) {
+      const randomIndex = Math.floor(Math.random() * pool.length)
+      result.push(pool[randomIndex])
+      pool.splice(randomIndex, 1)
+    }
+    result.sort((a, b) => a - b)
+    setValues(result.map(String))
     setShowValidationMessage(false)
-    const maxRandomValue = combinationSize === 6 ? 49 : 52
-    const randomizedValues = generateUniqueRandomValues(finalEntries, maxRandomValue)
-
-    setValues(randomizedValues)
     setActiveEntries(Array.from({ length: finalEntries }, () => false))
-  }, [finalEntries, combinationSize])
+    setGoldenBallIndex(null)
+  }, [finalEntries, maxAllowedValue])
 
   const snapshotCounts = useMemo(() => {
     return Array.from(
@@ -204,7 +231,7 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
             {snapshotCounts.map((countLabel) => (
               <div
                 key={countLabel}
-                className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-muted/20 px-3 py-2"
+                className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 shadow-sm"
               >
                 <Button
                   type="button"
@@ -240,7 +267,7 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
         )}
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Won numbers {selectedCount} of {finalEntries} lucky
+            Won numbers {selectedCount} of {finalEntries} lucky (double-click or Shift+Enter to set bonus ball)
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-4 pb-6">
@@ -249,23 +276,44 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
               key={index}
               index={index}
               value={value}
-              isButtonMode={canUseButtonMode}
+              isButtonMode={isLocked}
               isActive={activeEntries[index]}
-              hasError={duplicateIndices.has(index) || outOfRangeIndices.has(index)}
+              isGolden={goldenBallIndex === index}
+              hasError={showValidationMessage && (duplicateIndices.has(index) || outOfRangeIndices.has(index))}
               onValueChange={handleInputChange}
               onToggle={handleToggle}
+              onDoubleToggle={handleDoubleToggle}
             />
           ))}
-          <div className="flex items-end">
-            {allEntriesEmpty ? (
-              <Button type="button" onClick={handleRandom} className="h-10">
-                Random
-              </Button>
-            ) : (
-              <Button type="button" variant="destructive" onClick={handleReset} className="h-10">
-                Reset
+          <div className="flex items-end gap-2">
+            {isLocked && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleEdit}
+                className="h-10"
+              >
+                EDIT
               </Button>
             )}
+            {!isLocked && (
+              <Button
+                type="button"
+                onClick={handleSet}
+                disabled={!allEntriesFilled}
+                className="h-10"
+              >
+                SET
+              </Button>
+            )}
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={anyEntryFilled ? handleReset : handleRandom}
+              className="h-10 w-24"
+            >
+              {anyEntryFilled ? 'RESET' : 'RANDOM'}
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -294,6 +342,7 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
                     {row.map((numIndex, itemIndex) => {
                       const hasValue = values[numIndex] !== ''
                       const isSelected = hasValue && activeEntries[numIndex]
+                      const isGolden = isSelected && goldenBallIndex === numIndex
 
                       return (
                         <Button
@@ -301,7 +350,7 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
                           variant="outline"
                           size="icon"
                           className={cn(
-                            isSelected ? ballActive : ballInactive
+                            isGolden ? ballGold : isSelected ? ballActive : ballInactive
                           )}
                         >
                           {values[numIndex] || ''}
@@ -313,7 +362,7 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
                     <Badge
                       variant="secondary"
                       className={cn(
-                        "size-10 rounded-md flex items-center justify-center text-sm font-bold p-0",
+                        "size-10 rounded-md flex items-center justify-center text-sm font-bold p-0 shadow-sm",
                         getCountBadgeClass(count)
                       )}
                     >
