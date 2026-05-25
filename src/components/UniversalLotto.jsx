@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -32,7 +32,63 @@ const getCountBadgeClass = (count) => {
   return 'bg-[#312A5C] text-[#C1BFFF] hover:bg-[#312A5C] border-transparent ring-1 ring-[#C1BFFF]/50'
 }
 
-export default function UniversalLotto({ data = [], guarantee, entries }) {
+const LottoRow = memo(({
+  row,
+  rowIndex,
+  values,
+  activeEntries,
+  goldenBallIndex,
+  combinationSize,
+  count
+}) => {
+  return (
+    <Card className="border-border/50 shadow-sm relative">
+      <div className="absolute top-1 left-2 text-[10px] text-muted-foreground/50 font-medium">
+        {rowIndex + 1}
+      </div>
+      <CardContent className="flex items-center justify-between gap-2 sm:gap-3 py-2">
+        <div
+          className="grid gap-2"
+          style={{
+            gridTemplateColumns: `repeat(${combinationSize}, minmax(0, 1fr))`
+          }}
+        >
+          {row.map((numIndex, itemIndex) => {
+            const hasValue = values[numIndex] !== ''
+            const isSelected = hasValue && activeEntries[numIndex]
+            const isGolden = isSelected && goldenBallIndex === numIndex
+
+            return (
+              <Button
+                key={itemIndex}
+                variant="outline"
+                size="icon"
+                className={cn(
+                  isGolden ? ballGold : isSelected ? ballActive : ballInactive
+                )}
+              >
+                {values[numIndex] || ''}
+              </Button>
+            )
+          })}
+        </div>
+        <div className="border-l border-border/50 pl-2 sm:pl-4 h-10 flex items-center">
+          <Badge
+            variant="secondary"
+            className={cn(
+              "size-10 rounded-md flex items-center justify-center text-sm font-bold p-0 shadow-sm",
+              getCountBadgeClass(count)
+            )}
+          >
+            {count}
+          </Badge>
+        </div>
+      </CardContent>
+    </Card>
+  )
+})
+
+const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
   const combinationSize = data[0]?.length || 0
 
   const maxIndex = useMemo(() => {
@@ -133,14 +189,16 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
       const nextActive = !nextActiveEntries[index]
       nextActiveEntries[index] = nextActive
 
-      if (!nextActive && goldenBallIndex === index) {
-        setGoldenBallIndex(null)
+      if (!nextActive) {
+        setGoldenBallIndex((currentGolden) =>
+          currentGolden === index ? null : currentGolden
+        )
       }
       return nextActiveEntries
     })
-  }, [isLocked, goldenBallIndex])
+  }, [isLocked])
 
-  const handleDoubleToggle = useCallback((index) => {
+  const handleDoubleToggle = useCallback((index, wasGolden) => {
     if (!isLocked) {
       return
     }
@@ -150,7 +208,7 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
       nextActiveEntries[index] = true
       return nextActiveEntries
     })
-    setGoldenBallIndex(index)
+    setGoldenBallIndex(wasGolden ? null : index)
   }, [isLocked])
 
   const handleSet = useCallback(() => {
@@ -201,20 +259,19 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
     )
   }, [combinationSize])
 
-  const matchSnapshot = useMemo(() => {
-    const counts = Object.fromEntries(snapshotCounts.map((count) => [count, 0]))
-    for (const row of data) {
-      let count = 0
-      for (const numIndex of row) {
-        if (values[numIndex] !== '' && activeEntries[numIndex]) {
-          count++
-        }
-      }
+  const { rowCounts, matchSnapshot } = useMemo(() => {
+    const counts = data.map((row) =>
+      row.filter((numIndex) => values[numIndex] !== '' && activeEntries[numIndex]).length
+    )
+
+    const snapshot = Object.fromEntries(snapshotCounts.map((count) => [count, 0]))
+    for (const count of counts) {
       if (count >= 3 && count <= combinationSize) {
-        counts[count] = (counts[count] || 0) + 1
+        snapshot[count] = (snapshot[count] || 0) + 1
       }
     }
-    return counts
+
+    return { rowCounts: counts, matchSnapshot: snapshot }
   }, [data, values, activeEntries, snapshotCounts, combinationSize])
 
   const selectedCount = useMemo(() => activeEntries.filter((entry) => entry).length, [activeEntries])
@@ -267,7 +324,7 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
         )}
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
-            Won numbers {selectedCount} of {finalEntries} lucky (double-click or Shift+Enter to set bonus ball)
+            Won numbers {selectedCount} of {finalEntries} lucky (double-click to set bonus ball)
           </CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-4 pb-6">
@@ -325,56 +382,22 @@ export default function UniversalLotto({ data = [], guarantee, entries }) {
             ? "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
             : "grid-cols-1 lg:grid-cols-2"
         )}>
-          {data.map((row, rowIndex) => {
-            const count = row.filter((numIndex) => values[numIndex] !== '' && activeEntries[numIndex]).length
-            return (
-              <Card key={rowIndex} className="border-border/50 shadow-sm relative">
-                <div className="absolute top-1 left-2 text-[10px] text-muted-foreground/50 font-medium">
-                  {rowIndex + 1}
-                </div>
-                <CardContent className="flex items-center justify-between gap-2 sm:gap-3 py-2">
-                  <div
-                    className="grid gap-2"
-                    style={{
-                      gridTemplateColumns: `repeat(${combinationSize}, minmax(0, 1fr))`
-                    }}
-                  >
-                    {row.map((numIndex, itemIndex) => {
-                      const hasValue = values[numIndex] !== ''
-                      const isSelected = hasValue && activeEntries[numIndex]
-                      const isGolden = isSelected && goldenBallIndex === numIndex
-
-                      return (
-                        <Button
-                          key={itemIndex}
-                          variant="outline"
-                          size="icon"
-                          className={cn(
-                            isGolden ? ballGold : isSelected ? ballActive : ballInactive
-                          )}
-                        >
-                          {values[numIndex] || ''}
-                        </Button>
-                      )
-                    })}
-                  </div>
-                  <div className="border-l border-border/50 pl-2 sm:pl-4 h-10 flex items-center">
-                    <Badge
-                      variant="secondary"
-                      className={cn(
-                        "size-10 rounded-md flex items-center justify-center text-sm font-bold p-0 shadow-sm",
-                        getCountBadgeClass(count)
-                      )}
-                    >
-                      {count}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-            )
-          })}
+          {data.map((row, rowIndex) => (
+            <LottoRow
+              key={rowIndex}
+              row={row}
+              rowIndex={rowIndex}
+              values={values}
+              activeEntries={activeEntries}
+              goldenBallIndex={goldenBallIndex}
+              combinationSize={combinationSize}
+              count={rowCounts[rowIndex]}
+            />
+          ))}
         </div>
       </div>
     </div>
   )
-}
+})
+
+export default UniversalLotto

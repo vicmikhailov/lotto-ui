@@ -17,6 +17,8 @@ const ballInactive =
   'translate-y-px bg-gradient-to-br from-slate-200/80 via-slate-300/70 to-slate-500/70 text-slate-500/70 ' +
   '[box-shadow:inset_4px_4px_8px_rgba(0,0,0,0.18),inset_-3px_-3px_6px_rgba(255,255,255,0.35),inset_0_1px_2px_rgba(0,0,0,0.12)]'
 
+const SINGLE_CLICK_DELAY_MS = 320
+
 const SystemInputCell = memo(function SystemInputCell({
   index,
   value,
@@ -52,7 +54,7 @@ const SystemInputCell = memo(function SystemInputCell({
     clickTimeoutRef.current = window.setTimeout(() => {
       onToggle(index)
       clickTimeoutRef.current = null
-    }, 180)
+    }, SINGLE_CLICK_DELAY_MS)
   }, [index, onToggle])
 
   const handleDoubleClick = useCallback(() => {
@@ -60,8 +62,8 @@ const SystemInputCell = memo(function SystemInputCell({
       window.clearTimeout(clickTimeoutRef.current)
       clickTimeoutRef.current = null
     }
-    onDoubleToggle(index)
-  }, [index, onDoubleToggle])
+    onDoubleToggle(index, isGolden)
+  }, [index, isGolden, onDoubleToggle])
 
   const handleKeyDown = useCallback((event) => {
     if (!event.shiftKey) {
@@ -70,9 +72,9 @@ const SystemInputCell = memo(function SystemInputCell({
 
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
-      onDoubleToggle(index)
+      onDoubleToggle(index, isGolden)
     }
-  }, [index, onDoubleToggle])
+  }, [index, isGolden, onDoubleToggle])
 
   return (
     <div className="flex flex-col items-center gap-1.5">
@@ -88,7 +90,7 @@ const SystemInputCell = memo(function SystemInputCell({
           onDoubleClick={handleDoubleClick}
           onKeyDown={handleKeyDown}
           aria-pressed={isActive}
-          aria-label={`Entry ${index + 1}: ${value}. Double-click or Shift+Enter to set bonus ball.`}
+          aria-label={`Entry ${index + 1}: ${value}. Double-click set bonus ball.`}
           className={cn(
             isGolden ? ballGold : isActive ? ballActive : ballInactive
           )}

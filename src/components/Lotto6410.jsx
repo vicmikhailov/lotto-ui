@@ -1,7 +1,6 @@
 import UniversalLotto from './UniversalLotto'
 
-export default function Lotto6410() {
-  const data = [
+const DATA = [
     [0,  1,  5,  7,  8,  9],
     [0,  2,  5,  6,  7,  9],
     [0,  1,  2,  6,  7,  8],
@@ -24,5 +23,6 @@ export default function Lotto6410() {
     [1,  2,  3,  4,  6,  7]
 ]
 
-  return <UniversalLotto data={data} guarantee={4} entries={10} />
+export default function Lotto6410() {
+  return <UniversalLotto data={DATA} guarantee={4} entries={10} />
 }
