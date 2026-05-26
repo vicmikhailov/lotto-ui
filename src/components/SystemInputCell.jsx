@@ -17,7 +17,7 @@ const ballInactive =
   'translate-y-px bg-gradient-to-br from-slate-200/80 via-slate-300/70 to-slate-500/70 text-slate-500/70 ' +
   '[box-shadow:inset_4px_4px_8px_rgba(0,0,0,0.18),inset_-3px_-3px_6px_rgba(255,255,255,0.35),inset_0_1px_2px_rgba(0,0,0,0.12)]'
 
-const SINGLE_CLICK_DELAY_MS = 320
+const SINGLE_CLICK_DELAY_MS = 150
 
 const SystemInputCell = memo(function SystemInputCell({
   index,

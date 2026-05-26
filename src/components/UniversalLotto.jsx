@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, memo } from 'react'
+import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -32,6 +32,29 @@ const getCountBadgeClass = (count) => {
   return 'bg-[#312A5C] text-[#C1BFFF] hover:bg-[#312A5C] border-transparent ring-1 ring-[#C1BFFF]/50'
 }
 
+const areLottoRowPropsEqual = (prevProps, nextProps) => {
+  if (prevProps.count !== nextProps.count) return false
+  if (prevProps.rowIndex !== nextProps.rowIndex) return false
+  if (prevProps.combinationSize !== nextProps.combinationSize) return false
+  if (prevProps.row !== nextProps.row) return false
+  if (prevProps.goldenBallIndex !== nextProps.goldenBallIndex) {
+    const wasGoldenInRow = prevProps.row.includes(prevProps.goldenBallIndex)
+    const isGoldenInRow = prevProps.row.includes(nextProps.goldenBallIndex)
+    if (wasGoldenInRow || isGoldenInRow) return false
+  }
+
+  const { row, values: prevValues, activeEntries: prevActive } = prevProps
+  const { values: nextValues, activeEntries: nextActive } = nextProps
+
+  for (let i = 0; i < row.length; i++) {
+    const idx = row[i]
+    if (prevValues[idx] !== nextValues[idx]) return false
+    if (prevActive[idx] !== nextActive[idx]) return false
+  }
+
+  return true
+}
+
 const LottoRow = memo(({
   row,
   rowIndex,
@@ -59,16 +82,15 @@ const LottoRow = memo(({
             const isGolden = isSelected && goldenBallIndex === numIndex
 
             return (
-              <Button
+              <div
                 key={itemIndex}
-                variant="outline"
-                size="icon"
                 className={cn(
+                  'flex items-center justify-center text-sm font-semibold shadow-sm',
                   isGolden ? ballGold : isSelected ? ballActive : ballInactive
                 )}
               >
                 {values[numIndex] || ''}
-              </Button>
+              </div>
             )
           })}
         </div>
@@ -85,6 +107,46 @@ const LottoRow = memo(({
         </div>
       </CardContent>
     </Card>
+  )
+}, areLottoRowPropsEqual)
+
+const SummaryItem = memo(({ countLabel, countValue }) => {
+  const [shouldSparkle, setShouldSparkle] = useState(false)
+  const prevCountRef = useRef(countValue)
+
+  useEffect(() => {
+    if (countValue > prevCountRef.current) {
+      setShouldSparkle(true)
+      const timer = setTimeout(() => setShouldSparkle(false), 700)
+      return () => clearTimeout(timer)
+    }
+    prevCountRef.current = countValue
+  }, [countValue])
+
+  return (
+    <div className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 shadow-sm">
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className={cn(
+          "size-7 rounded-full text-xs font-bold cursor-default border-0 transition-all text-slate-700 bg-linear-to-br from-white via-slate-100 to-slate-300 [box-shadow:inset_2px_2px_5px_rgba(255,255,255,0.95),inset_-1px_-2px_4px_rgba(0,0,0,0.2),0_3px_7px_rgba(0,0,0,0.2)]",
+          shouldSparkle && "animate-sparkle"
+        )}
+      >
+        {countLabel}
+      </Button>
+      <span
+        className={cn(
+          'inline-flex h-7 min-w-9 items-center justify-center rounded-md px-2 text-sm font-bold leading-none border-0',
+          countValue === 0
+            ? 'text-muted-foreground/50'
+            : 'text-foreground'
+        )}
+      >
+        {countValue}
+      </span>
+    </div>
   )
 })
 
@@ -253,21 +315,37 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
   }, [finalEntries, maxAllowedValue])
 
   const snapshotCounts = useMemo(() => {
+    const startCount = combinationSize === 6 ? 2 : 3
     return Array.from(
-      { length: Math.max(combinationSize - 2, 0) },
-      (_, index) => index + 3
+      { length: Math.max(combinationSize - startCount + 1, 0) },
+      (_, index) => index + startCount
     )
   }, [combinationSize])
 
   const { rowCounts, matchSnapshot } = useMemo(() => {
-    const counts = data.map((row) =>
-      row.filter((numIndex) => values[numIndex] !== '' && activeEntries[numIndex]).length
-    )
+    const counts = data.map((row) => {
+      let matchCount = 0
+      for (let i = 0; i < row.length; i++) {
+        const numIndex = row[i]
+        if (values[numIndex] !== '' && activeEntries[numIndex]) {
+          matchCount++
+        }
+      }
+      return matchCount
+    })
 
-    const snapshot = Object.fromEntries(snapshotCounts.map((count) => [count, 0]))
-    for (const count of counts) {
+    const snapshot = {}
+    for (let i = 0; i < snapshotCounts.length; i++) {
+      snapshot[snapshotCounts[i]] = 0
+    }
+
+    for (let i = 0; i < counts.length; i++) {
+      const count = counts[i]
       if (count >= 3 && count <= combinationSize) {
         snapshot[count] = (snapshot[count] || 0) + 1
+      }
+      if (combinationSize === 6 && count >= 2) {
+        snapshot[2]++
       }
     }
 
@@ -286,29 +364,11 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
         <CardContent className="px-4 py-0">
           <div className="flex flex-wrap gap-1">
             {snapshotCounts.map((countLabel) => (
-              <div
+              <SummaryItem
                 key={countLabel}
-                className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 shadow-sm"
-              >
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  className="size-7 rounded-full text-xs font-bold cursor-default border-0 transition-all text-slate-700 bg-gradient-to-br from-white via-slate-100 to-slate-300 [box-shadow:inset_2px_2px_5px_rgba(255,255,255,0.95),inset_-1px_-2px_4px_rgba(0,0,0,0.2),0_3px_7px_rgba(0,0,0,0.2)]"
-                >
-                  {countLabel}
-                </Button>
-                <span
-                  className={cn(
-                    'inline-flex h-7 min-w-9 items-center justify-center rounded-md px-2 text-sm font-bold leading-none border-0',
-                    matchSnapshot[countLabel] === 0
-                      ? 'text-muted-foreground/50'
-                      : 'text-foreground'
-                  )}
-                >
-                  {matchSnapshot[countLabel]}
-                </span>
-              </div>
+                countLabel={countLabel}
+                countValue={matchSnapshot[countLabel]}
+              />
             ))}
           </div>
         </CardContent>
