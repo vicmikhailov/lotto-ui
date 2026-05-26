@@ -6,17 +6,17 @@ import { cn } from '@/lib/utils'
 import SystemInputCell from '@/components/SystemInputCell'
 
 const ballActive =
-  'size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
+  'size-9 sm:size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
   'bg-gradient-to-br from-white via-slate-100 to-slate-300 text-slate-700 ' +
   '[box-shadow:inset_2px_3px_8px_rgba(255,255,255,0.95),inset_-2px_-3px_6px_rgba(0,0,0,0.2),0_4px_10px_rgba(0,0,0,0.2)]'
 
 const ballGold =
-  'size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
+  'size-9 sm:size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
   'bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-600 text-amber-950 ' +
   '[box-shadow:inset_2px_3px_8px_rgba(255,255,255,0.8),inset_-2px_-3px_6px_rgba(0,0,0,0.3),0_4px_10px_rgba(0,0,0,0.3)]'
 
 const ballInactive =
-  'size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
+  'size-9 sm:size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
   'bg-gradient-to-br from-muted/50 via-muted/30 to-muted/10 text-muted-foreground/40 ' +
   '[box-shadow:inset_1px_1px_3px_rgba(255,255,255,0.1),inset_-1px_-1px_2px_rgba(0,0,0,0.05)]'
 
@@ -61,7 +61,6 @@ const LottoRow = memo(({
   values,
   activeEntries,
   goldenBallIndex,
-  combinationSize,
   count
 }) => {
   return (
@@ -69,13 +68,8 @@ const LottoRow = memo(({
       <div className="absolute top-1 left-2 text-[10px] text-muted-foreground/50 font-medium">
         {rowIndex + 1}
       </div>
-      <CardContent className="flex items-center justify-between gap-2 sm:gap-3 py-2">
-        <div
-          className="grid gap-2"
-          style={{
-            gridTemplateColumns: `repeat(${combinationSize}, minmax(0, 1fr))`
-          }}
-        >
+      <CardContent className="flex items-center justify-between gap-3 py-3 px-3 sm:px-4">
+        <div className="flex flex-wrap gap-2">
           {row.map((numIndex, itemIndex) => {
             const hasValue = values[numIndex] !== ''
             const isSelected = hasValue && activeEntries[numIndex]
@@ -85,7 +79,7 @@ const LottoRow = memo(({
               <div
                 key={itemIndex}
                 className={cn(
-                  'flex items-center justify-center text-sm font-semibold shadow-sm',
+                  'flex items-center justify-center text-xs sm:text-sm font-semibold shadow-sm',
                   isGolden ? ballGold : isSelected ? ballActive : ballInactive
                 )}
               >
@@ -94,11 +88,11 @@ const LottoRow = memo(({
             )
           })}
         </div>
-        <div className="border-l border-border/50 pl-2 sm:pl-4 h-10 flex items-center">
+        <div className="border-l border-border/50 pl-2 sm:pl-4 h-10 flex items-center shrink-0">
           <Badge
             variant="secondary"
             className={cn(
-              "size-10 rounded-md flex items-center justify-center text-sm font-bold p-0 shadow-sm",
+              "size-9 sm:size-10 rounded-md flex items-center justify-center text-sm font-bold p-0 shadow-sm",
               getCountBadgeClass(count)
             )}
           >
@@ -269,6 +263,7 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
     if (hasValidationErrors) {
       setShowValidationMessage(true)
     } else {
+      setValues((currentValues) => [...currentValues].sort((a, b) => Number(a) - Number(b)))
       setIsLocked(true)
       setShowValidationMessage(false)
     }
@@ -348,8 +343,8 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
       </header>
 
       <Card className="border-2 border-system-input-border bg-system-input backdrop-blur-sm shadow-sm">
-        <CardContent className="px-4 py-0">
-          <div className="flex flex-wrap gap-1">
+        <CardContent className="p-3 sm:p-4">
+          <div className="flex flex-wrap gap-2">
             {snapshotCounts.map((countLabel) => (
               <SummaryItem
                 key={countLabel}
@@ -374,28 +369,30 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
             Won numbers {selectedCount} of {finalEntries} lucky (double-click to set bonus ball)
           </CardTitle>
         </CardHeader>
-        <CardContent className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-4 pb-6">
-          {values.map((value, index) => (
-            <SystemInputCell
-              key={index}
-              index={index}
-              value={value}
-              isButtonMode={isLocked}
-              isActive={activeEntries[index]}
-              isGolden={goldenBallIndex === index}
-              hasError={showValidationMessage && (duplicateIndices.has(index) || outOfRangeIndices.has(index))}
-              onValueChange={handleInputChange}
-              onToggle={handleToggle}
-              onDoubleToggle={handleDoubleToggle}
-            />
-          ))}
-          <div className="flex items-end gap-2">
+        <CardContent className="space-y-6 pb-6">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-4">
+            {values.map((value, index) => (
+              <SystemInputCell
+                key={index}
+                index={index}
+                value={value}
+                isButtonMode={isLocked}
+                isActive={activeEntries[index]}
+                isGolden={goldenBallIndex === index}
+                hasError={showValidationMessage && (duplicateIndices.has(index) || outOfRangeIndices.has(index))}
+                onValueChange={handleInputChange}
+                onToggle={handleToggle}
+                onDoubleToggle={handleDoubleToggle}
+              />
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-4 border-t border-border/50">
             {isLocked && (
               <Button
                 type="button"
                 variant="outline"
                 onClick={handleEdit}
-                className="h-10"
+                className="h-10 px-6 font-semibold"
               >
                 EDIT
               </Button>
@@ -405,7 +402,7 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
                 type="button"
                 onClick={handleSet}
                 disabled={!allEntriesFilled}
-                className="h-10"
+                className="h-10 px-8 font-semibold"
               >
                 SET
               </Button>
@@ -414,7 +411,7 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
               type="button"
               variant="destructive"
               onClick={anyEntryFilled ? handleReset : handleRandom}
-              className="h-10 w-24"
+              className="h-10 min-w-28 font-semibold"
             >
               {anyEntryFilled ? 'RESET' : 'RANDOM'}
             </Button>
@@ -422,7 +419,7 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
         </CardContent>
       </Card>
 
-      <div className="rounded-xl border border-border bg-muted/10 p-6">
+      <div className="rounded-xl border border-border bg-muted/10 p-4 sm:p-6">
         <div className={cn(
           "grid gap-4",
           combinationSize <= 6
@@ -437,7 +434,6 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
               values={values}
               activeEntries={activeEntries}
               goldenBallIndex={goldenBallIndex}
-              combinationSize={combinationSize}
               count={rowCounts[rowIndex]}
             />
           ))}
