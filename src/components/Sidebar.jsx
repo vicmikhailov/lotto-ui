@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { Menu, X, SunMedium, MoonStar, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import LottoIcon from './LottoIcon'
 import { SIDEBAR_ITEMS } from '@/config/pages'
 
-export default function Sidebar({ currentPage, setCurrentPage, darkMode, setDarkMode, isOpen, setIsOpen }) {
+const Sidebar = memo(({ currentPage, setCurrentPage, darkMode, setDarkMode, isOpen, setIsOpen }) => {
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   )
@@ -120,4 +120,6 @@ export default function Sidebar({ currentPage, setCurrentPage, darkMode, setDark
       </aside>
     </>
   )
-}
+})
+
+export default Sidebar

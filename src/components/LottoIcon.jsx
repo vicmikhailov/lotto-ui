@@ -1,6 +1,7 @@
+import { memo } from "react";
 import { cn } from "@/lib/utils";
 
-const LottoIcon = ({ label, className }) => {
+const LottoIcon = memo(({ label, className }) => {
   // label is like "7-5-8 (6)" or "7-5-10 (21)"
   const match = label.match(/(\d+)-(\d+)-(\d+)/);
   if (!match) return null;
@@ -22,6 +23,8 @@ const LottoIcon = ({ label, className }) => {
       <span className="transition-transform duration-300 -translate-y-[15%] text-[0.65rem]">{n3}</span>
     </div>
   );
-};
+});
+
+LottoIcon.displayName = 'LottoIcon';
 
 export default LottoIcon;

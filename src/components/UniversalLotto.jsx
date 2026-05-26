@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, memo, useEffect, useRef } from 'react'
+import { useState, useMemo, useCallback, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -111,28 +111,13 @@ const LottoRow = memo(({
 }, areLottoRowPropsEqual)
 
 const SummaryItem = memo(({ countLabel, countValue }) => {
-  const [shouldSparkle, setShouldSparkle] = useState(false)
-  const prevCountRef = useRef(countValue)
-
-  useEffect(() => {
-    if (countValue > prevCountRef.current) {
-      setShouldSparkle(true)
-      const timer = setTimeout(() => setShouldSparkle(false), 700)
-      return () => clearTimeout(timer)
-    }
-    prevCountRef.current = countValue
-  }, [countValue])
-
   return (
     <div className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-muted/20 px-3 py-2 shadow-sm">
       <Button
         type="button"
         variant="outline"
         size="icon"
-        className={cn(
-          "size-7 rounded-full text-xs font-bold cursor-default border-0 transition-all text-slate-700 bg-linear-to-br from-white via-slate-100 to-slate-300 [box-shadow:inset_2px_2px_5px_rgba(255,255,255,0.95),inset_-1px_-2px_4px_rgba(0,0,0,0.2),0_3px_7px_rgba(0,0,0,0.2)]",
-          shouldSparkle && "animate-sparkle"
-        )}
+        className="size-7 rounded-full text-xs font-bold cursor-default border-0 transition-all text-slate-700 bg-linear-to-br from-white via-slate-100 to-slate-300 [box-shadow:inset_2px_2px_5px_rgba(255,255,255,0.95),inset_-1px_-2px_4px_rgba(0,0,0,0.2),0_3px_7px_rgba(0,0,0,0.2)]"
       >
         {countLabel}
       </Button>
@@ -154,7 +139,14 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
   const combinationSize = data[0]?.length || 0
 
   const maxIndex = useMemo(() => {
-    return data.length > 0 ? Math.max(...data.flat()) : -1
+    let max = -1
+    for (let i = 0; i < data.length; i++) {
+      const row = data[i]
+      for (let j = 0; j < row.length; j++) {
+        if (row[j] > max) max = row[j]
+      }
+    }
+    return max
   }, [data])
 
   const calculatedEntries = maxIndex + 1
@@ -203,21 +195,19 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
 
   // Single pass calculation of duplicate and out-of-range indices
   const { duplicateIndices, outOfRangeIndices, hasValidationErrors } = useMemo(() => {
-    const counts = {}
-    for (const value of values) {
-      if (value !== '') {
-        counts[value] = (counts[value] || 0) + 1
-      }
-    }
-
+    const valueToIndices = {}
     const dupIndices = new Set()
     const rangeIndices = new Set()
 
     values.forEach((value, index) => {
       if (value !== '') {
-        if (counts[value] > 1) {
+        if (valueToIndices[value] !== undefined) {
+          dupIndices.add(valueToIndices[value])
           dupIndices.add(index)
+        } else {
+          valueToIndices[value] = index
         }
+
         const numericValue = Number(value)
         if (Number.isNaN(numericValue) || numericValue < 1 || numericValue > maxAllowedValue) {
           rangeIndices.add(index)
@@ -323,6 +313,11 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
   }, [combinationSize])
 
   const { rowCounts, matchSnapshot } = useMemo(() => {
+    const snapshot = {}
+    for (let i = 0; i < snapshotCounts.length; i++) {
+      snapshot[snapshotCounts[i]] = 0
+    }
+
     const counts = data.map((row) => {
       let matchCount = 0
       for (let i = 0; i < row.length; i++) {
@@ -331,23 +326,15 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
           matchCount++
         }
       }
-      return matchCount
-    })
 
-    const snapshot = {}
-    for (let i = 0; i < snapshotCounts.length; i++) {
-      snapshot[snapshotCounts[i]] = 0
-    }
-
-    for (let i = 0; i < counts.length; i++) {
-      const count = counts[i]
-      if (count >= 3 && count <= combinationSize) {
-        snapshot[count] = (snapshot[count] || 0) + 1
+      if (matchCount >= 3 && matchCount <= combinationSize) {
+        snapshot[matchCount] = (snapshot[matchCount] || 0) + 1
       }
-      if (combinationSize === 6 && count >= 2) {
+      if (combinationSize === 6 && matchCount >= 2) {
         snapshot[2]++
       }
-    }
+      return matchCount
+    })
 
     return { rowCounts: counts, matchSnapshot: snapshot }
   }, [data, values, activeEntries, snapshotCounts, combinationSize])
