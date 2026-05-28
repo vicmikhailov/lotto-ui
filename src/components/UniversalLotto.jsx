@@ -322,17 +322,14 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
         }
       }
 
-      if (matchCount >= 3 && matchCount <= combinationSize) {
-        snapshot[matchCount] = (snapshot[matchCount] || 0) + 1
-      }
-      if (combinationSize === 6 && matchCount >= 2) {
-        snapshot[2]++
+      if (snapshot[matchCount] !== undefined) {
+        snapshot[matchCount]++
       }
       return matchCount
     })
 
     return { rowCounts: counts, matchSnapshot: snapshot }
-  }, [data, values, activeEntries, snapshotCounts, combinationSize])
+  }, [data, values, activeEntries, snapshotCounts])
 
   const selectedCount = useMemo(() => activeEntries.filter((entry) => entry).length, [activeEntries])
 
