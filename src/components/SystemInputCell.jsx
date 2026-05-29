@@ -27,6 +27,7 @@ const SystemInputCell = memo(function SystemInputCell({
   isGolden,
   hasError,
   onValueChange,
+  onPaste,
   onToggle,
   onDoubleToggle,
 }) {
@@ -107,6 +108,7 @@ const SystemInputCell = memo(function SystemInputCell({
           aria-label={`Entry ${index + 1}`}
           value={value}
           onChange={(e) => onValueChange(index, e.target.value)}
+          onPaste={(e) => onPaste?.(index, e)}
           className={cn(
             'h-9 w-11 sm:h-10 sm:w-12 rounded-md border bg-background text-center text-xs sm:text-sm font-semibold transition-all focus:outline-none focus:ring-2',
             hasError

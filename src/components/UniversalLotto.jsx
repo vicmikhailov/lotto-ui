@@ -184,6 +184,45 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
     })
   }, [])
 
+  const handlePaste = useCallback((startIndex, event) => {
+    const pastedText = event.clipboardData.getData('text')
+    const numbers = pastedText.split(/[^\d]+/).filter(n => n !== '')
+
+    if (numbers.length > 1) {
+      event.preventDefault()
+      setShowValidationMessage(false)
+
+      const indicesToUpdate = []
+      for (let i = 0; i < numbers.length && (startIndex + i) < finalEntries; i++) {
+        indicesToUpdate.push(startIndex + i)
+      }
+
+      setValues((currentValues) => {
+        const nextValues = [...currentValues]
+        indicesToUpdate.forEach((idx, i) => {
+          const sanitizedValue = numbers[i].replace(/[^0-9]/g, '')
+          nextValues[idx] = sanitizedValue === '' ? '' : String(Number(sanitizedValue))
+        })
+        return nextValues
+      })
+
+      setActiveEntries((currentActiveEntries) => {
+        const nextActiveEntries = [...currentActiveEntries]
+        indicesToUpdate.forEach((idx) => {
+          nextActiveEntries[idx] = false
+        })
+        return nextActiveEntries
+      })
+
+      setGoldenBallIndex((currentGolden) => {
+        if (indicesToUpdate.includes(currentGolden)) {
+          return null
+        }
+        return currentGolden
+      })
+    }
+  }, [finalEntries])
+
   const anyEntryFilled = useMemo(() => values.some((value) => value !== ''), [values])
   const allEntriesFilled = useMemo(() => values.every((value) => value !== ''), [values])
 
@@ -378,6 +417,7 @@ const UniversalLotto = memo(({ data = [], guarantee, entries }) => {
                 isGolden={goldenBallIndex === index}
                 hasError={showValidationMessage && (duplicateIndices.has(index) || outOfRangeIndices.has(index))}
                 onValueChange={handleInputChange}
+                onPaste={handlePaste}
                 onToggle={handleToggle}
                 onDoubleToggle={handleDoubleToggle}
               />
