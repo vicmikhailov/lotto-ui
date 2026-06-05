@@ -21,6 +21,7 @@ import Lotto6510 from '@/components/Lotto6510'
 import LottoIcon from '@/components/LottoIcon'
 import Lotto649 from "@/components/Lotto649.jsx"
 import Lotto6410 from "@/components/Lotto6410.jsx"
+import ErrorBoundary from '@/components/ErrorBoundary'
 
 import { PAGES } from '@/config/pages'
 
@@ -54,64 +55,66 @@ function App() {
   }, [darkMode])
 
   return (
-    <div className="flex min-h-dvh bg-background text-foreground transition-colors duration-300">
-      <Sidebar
-        currentPage={currentPage}
-        setCurrentPage={setCurrentPage}
-        darkMode={darkMode}
-        setDarkMode={setDarkMode}
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-      />
+    <ErrorBoundary>
+      <div className="flex min-h-dvh bg-background text-foreground transition-colors duration-300">
+        <Sidebar
+          currentPage={currentPage}
+          setCurrentPage={setCurrentPage}
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          isOpen={isOpen}
+          setIsOpen={setIsOpen}
+        />
 
-      <main className={cn(
-        "flex-1 overflow-auto transition-all duration-300",
-        isOpen ? "md:ml-64" : "md:ml-16"
-      )}>
-        <div className="mx-auto min-h-dvh max-w-6xl px-6 py-8 sm:px-10 lg:px-12">
-          {currentPage === 'home' && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 animate-in fade-in duration-500">
-              {PAGES.map((page) => (
-                <Card
-                  key={page.id}
-                  className="cursor-pointer border border-border/60 bg-card/80 backdrop-blur transition-all hover:bg-accent hover:text-accent-foreground group"
-                  onClick={() => setCurrentPage(page.id)}
-                >
-                  <CardHeader className="flex flex-row items-center gap-4 space-y-0">
-                    <div className="flex size-12 items-center justify-center rounded-full bg-primary/5 text-primary transition-all duration-300 group-hover:bg-primary/10">
-                      {page.id.includes('-') ? (
-                        <LottoIcon label={page.label} className="size-7" />
-                      ) : (
-                        <page.icon className="size-6 transition-transform duration-300 group-hover:scale-110" />
-                      )}
-                    </div>
-                    <div>
-                      <CardTitle className="text-2xl">{page.label}</CardTitle>
-                      <CardDescription>Go to {page.label} page</CardDescription>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {currentPage === 'about' && (
-            <div className="animate-in fade-in duration-500">
-              <About />
-            </div>
-          )}
-
-          {currentPage !== 'home' && currentPage !== 'about' && (() => {
-            const SelectedLottoComponent = LOTTO_COMPONENTS[currentPage]
-            return SelectedLottoComponent ? (
-              <div className="animate-in fade-in duration-500">
-                <SelectedLottoComponent />
+        <main className={cn(
+          "flex-1 overflow-auto transition-all duration-300",
+          isOpen ? "md:ml-64" : "md:ml-16"
+        )}>
+          <div className="mx-auto min-h-dvh max-w-6xl px-6 py-8 sm:px-10 lg:px-12">
+            {currentPage === 'home' && (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2 animate-in fade-in duration-500">
+                {PAGES.map((page) => (
+                  <Card
+                    key={page.id}
+                    className="cursor-pointer border border-border/60 bg-card/80 backdrop-blur transition-all hover:bg-accent hover:text-accent-foreground group"
+                    onClick={() => setCurrentPage(page.id)}
+                  >
+                    <CardHeader className="flex flex-row items-center gap-4 space-y-0">
+                      <div className="flex size-12 items-center justify-center rounded-full bg-primary/5 text-primary transition-all duration-300 group-hover:bg-primary/10">
+                        {page.id.includes('-') ? (
+                          <LottoIcon label={page.label} className="size-7" />
+                        ) : (
+                          <page.icon className="size-6 transition-transform duration-300 group-hover:scale-110" />
+                        )}
+                      </div>
+                      <div>
+                        <CardTitle className="text-2xl">{page.label}</CardTitle>
+                        <CardDescription>Go to {page.label} page</CardDescription>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
               </div>
-            ) : null
-          })()}
-        </div>
-      </main>
-    </div>
+            )}
+
+            {currentPage === 'about' && (
+              <div className="animate-in fade-in duration-500">
+                <About />
+              </div>
+            )}
+
+            {currentPage !== 'home' && currentPage !== 'about' && (() => {
+              const SelectedLottoComponent = LOTTO_COMPONENTS[currentPage]
+              return SelectedLottoComponent ? (
+                <div className="animate-in fade-in duration-500">
+                  <SelectedLottoComponent />
+                </div>
+              ) : null
+            })()}
+          </div>
+        </main>
+      </div>
+    </ErrorBoundary>
   )
 }
 
