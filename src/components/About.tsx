@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 export default function About() {
   return (
     <div className="space-y-6">
-      <header className="space-y-4">
+      <header key="about-header" className="space-y-4">
         <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">About Coverlot</h1>
         <p className="text-lg text-muted-foreground">
           Coverlot is a specialized tool designed to help lotto players explore combinations and coverage.

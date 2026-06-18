@@ -1,14 +1,14 @@
-import {cn} from "@/lib/utils"
+import { cn } from "@/lib/utils"
+import type { ComponentPropsWithoutRef } from 'react'
 
-function Card({
-                  className,
-                  size = "default",
-                  ...props
-              }) {
+type CardProps = ComponentPropsWithoutRef<'div'> & { size?: string }
+type CardSectionProps = ComponentPropsWithoutRef<'div'>
+
+function Card({ className = "", size: _size, ...props }: CardProps) {
     return (
         <div
             data-slot="card"
-            data-size={size}
+            data-size={_size || "default"}
             className={cn(
                 "group/card flex flex-col gap-4 overflow-hidden rounded-xl bg-card py-4 text-sm text-card-foreground ring-1 ring-foreground/10 has-data-[slot=card-footer]:pb-0 has-[>img:first-child]:pt-0 data-[size=sm]:gap-3 data-[size=sm]:py-3 data-[size=sm]:has-data-[slot=card-footer]:pb-0 *:[img:first-child]:rounded-t-xl *:[img:last-child]:rounded-b-xl",
                 className
@@ -17,10 +17,7 @@ function Card({
     );
 }
 
-function CardHeader({
-                        className,
-                        ...props
-                    }) {
+function CardHeader({ className = "", ...props }: CardSectionProps) {
     return (
         <div
             data-slot="card-header"
@@ -32,10 +29,7 @@ function CardHeader({
     );
 }
 
-function CardTitle({
-                       className,
-                       ...props
-                   }) {
+function CardTitle({ className = "", ...props }: CardSectionProps) {
     return (
         <div
             data-slot="card-title"
@@ -47,10 +41,7 @@ function CardTitle({
     );
 }
 
-function CardDescription({
-                             className,
-                             ...props
-                         }) {
+function CardDescription({ className = "", ...props }: CardSectionProps) {
     return (
         <div
             data-slot="card-description"
@@ -59,10 +50,7 @@ function CardDescription({
     );
 }
 
-function CardAction({
-                        className,
-                        ...props
-                    }) {
+function CardAction({ className = "", ...props }: CardSectionProps) {
     return (
         <div
             data-slot="card-action"
@@ -74,10 +62,7 @@ function CardAction({
     );
 }
 
-function CardContent({
-                         className,
-                         ...props
-                     }) {
+function CardContent({ className = "", ...props }: CardSectionProps) {
     return (
         <div
             data-slot="card-content"
@@ -86,10 +71,7 @@ function CardContent({
     );
 }
 
-function CardFooter({
-                        className,
-                        ...props
-                    }) {
+function CardFooter({ className = "", ...props }: CardSectionProps) {
     return (
         <div
             data-slot="card-footer"

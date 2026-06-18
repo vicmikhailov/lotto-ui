@@ -1,13 +1,13 @@
 import {Separator as SeparatorPrimitive} from "radix-ui"
+import type { ComponentPropsWithoutRef } from 'react'
 
 import {cn} from "@/lib/utils"
 
-function Separator({
-                       className,
-                       orientation = "horizontal",
-                       decorative = true,
-                       ...props
-                   }) {
+type SeparatorProps = ComponentPropsWithoutRef<typeof SeparatorPrimitive.Root> & {
+    decorative?: boolean
+}
+
+function Separator({ className = "", decorative = true, orientation = "horizontal", ...props }: SeparatorProps) {
     return (
         <SeparatorPrimitive.Root
             data-slot="separator"

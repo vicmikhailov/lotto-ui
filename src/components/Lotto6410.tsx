@@ -1,4 +1,5 @@
-import UniversalLotto from './UniversalLotto'
+import type { LottoGameState } from '@/types'
+import LottoGame from './LottoGame'
 
 const DATA = [
     [0,  1,  5,  7,  8,  9],
@@ -23,6 +24,11 @@ const DATA = [
     [1,  2,  3,  4,  6,  7]
 ]
 
-export default function Lotto6410() {
-  return <UniversalLotto data={DATA} guarantee={4} entries={10} />
+interface Lotto6410Props {
+    persistedState?: LottoGameState
+    onStateChange?: (state: LottoGameState) => void
+}
+
+export default function Lotto6410({ persistedState, onStateChange }: Lotto6410Props) {
+    return <LottoGame data={DATA} guarantee={4} entries={10} panelName="Balanced Play" persistedState={persistedState} onStateChange={onStateChange} />
 }

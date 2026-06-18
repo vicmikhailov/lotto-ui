@@ -22,15 +22,13 @@ const buttonVariants = cva(
             },
             size: {
                 default:
-                    "h-8 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
-                xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2 text-xs in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3",
-                sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5 text-[0.8rem] in-data-[slot=button-group]:rounded-lg has-data-[icon=inline-end]:pr-1.5 has-data-[icon=inline-start]:pl-1.5 [&_svg:not([class*='size-'])]:size-3.5",
-                lg: "h-9 gap-1.5 px-2.5 has-data-[icon=inline-end]:pr-2 has-data-[icon=inline-start]:pl-2",
+                    "h-8 gap-1.5 px-2.5",
+                xs: "h-6 gap-1 rounded-[min(var(--radius-md),10px)] px-2",
+                sm: "h-7 gap-1 rounded-[min(var(--radius-md),12px)] px-2.5",
+                lg: "h-9 gap-1.5 px-2.5",
                 icon: "size-8",
-                "icon-xs":
-                    "size-6 rounded-[min(var(--radius-md),10px)] in-data-[slot=button-group]:rounded-lg [&_svg:not([class*='size-'])]:size-3",
-                "icon-sm":
-                    "size-7 rounded-[min(var(--radius-md),12px)] in-data-[slot=button-group]:rounded-lg",
+                "icon-xs": "size-6 rounded-[min(var(--radius-md),10px)]",
+                "icon-sm": "size-7 rounded-[min(var(--radius-md),12px)]",
                 "icon-lg": "size-9",
             },
         },
@@ -41,13 +39,13 @@ const buttonVariants = cva(
     }
 )
 
-function Button({
-                    className,
-                    variant = "default",
-                    size = "default",
-                    asChild = false,
-                    ...props
-                }) {
+interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+    variant?: 'default' | 'outline' | 'secondary' | 'ghost' | 'destructive' | 'link'
+    size?: 'default' | 'xs' | 'sm' | 'lg' | 'icon' | 'icon-xs' | 'icon-sm' | 'icon-lg'
+    asChild?: boolean
+}
+
+function Button({ className = "", variant = "default" as const, size = "default" as const, asChild = false, ...props }: ButtonProps) {
     const Comp = asChild ? Slot.Root : "button"
 
     return (

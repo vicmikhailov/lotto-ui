@@ -26,3 +26,6 @@ out/
 *.njsproj
 *.sln
 *.sw?
+/.claude/
+/*.md
+!/README.md

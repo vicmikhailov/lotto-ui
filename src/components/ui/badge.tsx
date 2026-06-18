@@ -27,12 +27,15 @@ const badgeVariants = cva(
     }
 )
 
-function Badge({
-                   className,
-                   variant = "default",
-                   asChild = false,
-                   ...props
-               }) {
+import type { ComponentPropsWithoutRef } from 'react'
+
+interface BadgeProps extends ComponentPropsWithoutRef<'span'> {
+    className?: string
+    variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link'
+    asChild?: boolean
+}
+
+function Badge({ className = "", variant = "default" as const, asChild = false, ...props }: BadgeProps) {
     const Comp = asChild ? Slot.Root : "span"
 
     return (
