@@ -1,13 +1,13 @@
 # Lotto System Visualization - Project Summary
 
-This document provides a comprehensive overview of the `lotto-ui` application, detailing its architecture, data model, UI patterns, and release workflow. This is a static React-based lottery combination visualizer with no backend dependencies.
+This document provides a comprehensive overview of the `lotto-ui` application (Coverlot), detailing its architecture, data model, UI patterns, and release workflow. This is a static React-based TypeScript lottery combination visualizer with no backend dependencies.
 
 ---
 
 ## 1. Project Overview
 
 **Project Name**: Coverlot  
-**Framework Stack**: React 19 + Vite 8 + Tailwind CSS 4.3  
+**Framework Stack**: React 19 + Vite 8 + TypeScript 6 + Tailwind CSS v4  
 **Purpose**: Interactive visualization platform for lottery combination systems, allowing users to input custom numbers and visualize match counts against precomputed ticket combinations
 
 ### Core Functionality
@@ -24,17 +24,17 @@ This document provides a comprehensive overview of the `lotto-ui` application, d
 ### 2.1 Application Structure
 | Layer | Choice |
 | --- | --- |
-| UI runtime | React 19 (no hooks rules violations) |
+| UI runtime | React 19 (TypeScript) |
 | Build tool | Vite 8 with `vite-plugin-singlefile` |
-| Styling | Tailwind CSS 4 (newer `@import "tailwindcss"`) |
+| Styling | Tailwind CSS v4 (`@import "tailwindcss"`) |
 | Component primitives | shadcn/ui (Radix UI + class-variance-authority) |
 
 ### 2.2 Navigation Pattern
 The app uses **state-based page routing** (not React Router):
-- `App.jsx` maintains `currentPage` state
-- A local `pages` array maps page IDs to labels and icons
+- `App.tsx` maintains `currentPage` state
+- A local `PAGES` array in `src/config/pages.ts` maps page IDs to labels and icons
 - Navigation updates `currentPage`, triggering conditional rendering in the main route
-- Sidebar (`Sidebar.jsx`) owns navigation UX and responsive behavior
+- Sidebar (`Sidebar.tsx`) owns navigation UX and responsive behavior
 
 ### 2.3 Responsive Behavior
 - **Mobile (<768px)**: Sidebar slides in/out with overlay backdrop; always collapsed initially
@@ -46,17 +46,17 @@ The app uses **state-based page routing** (not React Router):
 ## 3. Data Model and Rendering Pattern
 
 ### 3.1 Index-Based Row Semantics
-Each lottery variant file (`src/components/Lotto*.jsx`) defines a **2D array of indices**, not final numbers. For example:
-```javascript
-// Lotto6410.jsx
-const data = [
+Each lottery variant file (`src/components/Lotto*.tsx`) defines a **2D array of indices**, not final numbers. For example:
+```typescript
+// Lotto6410.tsx
+const DATA = [
   [0, 1, 5, 7, 8, 9], // Row uses inputs at indices 0,1,5,7,8,9
   [0, 2, 5, 6, 7, 9],
   // ...
 ]
 ```
 
-### 3.2 `UniversalLotto.jsx` Engine
+### 3.2 `LottoGame.tsx` Engine
 This shared component handles all rendering logic:
 - **State**: Maintains `values[]` array initialized as sequential strings (`"1".."N"`)
 - **Dynamic Inputs**: Renders input fields with user-modifiable values
@@ -68,11 +68,11 @@ This shared component handles all rendering logic:
   - Red: exceeds guarantee (`count > guarantee`)
 
 ### 3.3 Key Derived Values
-```javascript
-const combinationSize = data[0]?.length || 0;
-const maxIndex = Math.max(...data.flat());
+```typescript
+const combinationSize = DATA[0]?.length || 0;
+const maxIndex = Math.max(...DATA.flat());
 const finalEntries = entries || (maxIndex + 1);
-const systemName = `${combinationSize}-${guarantee}-${finalEntries} (${data.length})`;
+const systemName = `${combinationSize}-${guarantee}-${finalEntries} (${DATA.length})`;
 ```
 
 ---
@@ -87,12 +87,12 @@ The app uses shadcn/ui primitives from `src/components/ui/`:
 - **Separator**: Radix UI primitive wrapped with Tailwind utility class composition
 
 ### 4.2 Utility Functions
-- **`cn()` from `src/lib/utils.js`**: Composes classes via `clsx()` + `tailwind-merge()`
+- **`cn()` from `src/lib/utils.ts`**: Composes classes via `clsx()` + `tailwind-merge()`
   - Avoids manual string joins and duplicate class issues
   - Standard across all components
 
 ### 4.3 Responsive Design
-- **UniversalLotto grid**: Dynamic column count based on `combinationSize`
+- **LottoGame grid**: Dynamic column count based on `combinationSize`
   - ≤6 columns: up to 3 per row (`md:grid-cols-2 xl:grid-cols-3`)
   - >6 columns: up to 2 per row (`lg:grid-cols-2`)
 - **Sidebar**: Collapsible with width transitions (`w-64` ↔ `w-16`)
@@ -102,27 +102,31 @@ The app uses shadcn/ui primitives from `src/components/ui/`:
 ## 5. Lottery Variant Files
 
 All variant files follow this minimal pattern:
-```javascript
-import UniversalLotto from './UniversalLotto'
+```typescript
+import LottoGame from './LottoGame'
 
 export default function LottoXXXX() {
-  const data = [
+  const DATA = [
     [0, 1, 2, ...],
     // rows of indices
   ]
-  return <UniversalLotto data={data} guarantee={N} entries={M} />
+  return <LottoGame data={DATA} guarantee={N} entries={M} />
 }
 ```
 
 | File | combinationSize | guarantee | entries | rows |
 | --- | --- | --- | --- | --- |
-| `Lotto649.jsx` | 6 | 4 | 9 | 12 |
-| `Lotto658.jsx` | 6 | 5 | 8 | 12 |
-| `Lotto6410.jsx` | 6 | 4 | 10 | 20 |
-| `Lotto758.jsx` | 7 | 5 | 8 | 6 |
-| `Lotto759.jsx` | 7 | 5 | 9 | 9 |
-| `Lotto7510.jsx` | 7 | 5 | 10 | 21 |
-| `Lotto7511.jsx` | 7 | 5 | 11 | 36 |
+| `Lotto649.tsx` | 6 | 4 | 9 | 12 |
+| `Lotto658.tsx` | 6 | 5 | 8 | 12 |
+| `Lotto6410.tsx` | 6 | 4 | 10 | 20 |
+| `Lotto6411.tsx` | 6 | 4 | 11 | 33 |
+| `Lotto6412.tsx` | 6 | 4 | 12 | 48 |
+| `Lotto659.tsx` | 6 | 5 | 9 | 30 |
+| `Lotto6510.tsx` | 6 | 5 | 10 | 50 |
+| `Lotto758.tsx` | 7 | 5 | 8 | 6 |
+| `Lotto759.tsx` | 7 | 5 | 9 | 9 |
+| `Lotto7510.tsx` | 7 | 5 | 10 | 21 |
+| `Lotto7511.tsx` | 7 | 5 | 11 | 36 |
 
 ---
 
@@ -135,10 +139,11 @@ export default function LottoXXXX() {
 | `npm run dev` | Start Vite dev server |
 | `npm run build` | Build production assets to `dist/` |
 | `npm run lint` | Run ESLint on the project |
+| `npm run type-check` | Run TypeScript check |
 
 ### 6.2 Production Build Details
 - **Single File Output**: `vite-plugin-singlefile` inlines all JS/CSS into one HTML file
-- **Base Path**: `base: './'` in `vite.config.js` allows direct file opening
+- **Base Path**: `base: './'` in `vite.config.ts` allows direct file opening
 - **Minification**: Terser with console/debugger removal
 
 ### 6.3 Release Packaging
@@ -168,27 +173,29 @@ The resulting `release/browser/index.html` can be:
 
 ## 7. Add-on Components
 
-### 7.1 `LottoIcon.jsx`
+### 7.1 `LottoIcon.tsx`
 A dynamic SVG icon generator for sidebar navigation items:
-- Parses label strings like `"7-5-8 (6)"` to extract `n1`, `n2`, `n3`
+- Parses label strings like `"6-4-9 (12)"` to extract `n1`, `n2`, `n3`
 - Renders stacked rotated numbers in a circular badge
 - States: secondary (default), primary (hover/focus)
 - Included for aesthetic consistency in navigation
 
-### 7.2 `About.jsx`
+### 7.2 `About.tsx`
 Static informational page explaining the app's purpose and mathematical context of lottery systems.
+
+### 7.3 `BottomBar.tsx`
+Mobile-only bottom navigation bar (`md:hidden`) for quick access to home on small screens.
 
 ---
 
 ## 8. Developer Workflows
 
 ### Adding a New Lottery System
-1. **Create new data wrapper** (`src/components/LottoXXXX.jsx`) with index array and props
-2. **Register in `App.jsx`**:
-   - Add to `pages` array with unique ID
-   - Import component and add conditional route in render
-3. **Register in `Sidebar.jsx`**:
-   - Add to `navItems` array with matching ID
+1. **Create new data wrapper** (`src/components/LottoXXXX.tsx`) with index array and props
+2. **Register in `src/config/pages.ts`**:
+   - Add to `PAGES` array with unique ID, label, and category
+   - Import component and add to `LOTTO_COMPONENTS` map
+3. **Sidebar automatically updates** via `SIDEBAR_ITEMS` which spreads `PAGES`
 
 ### Editing Data Arrays
 - Preserve **index semantics**: changing index meaning breaks displayed mappings
@@ -204,47 +211,28 @@ Static informational page explaining the app's purpose and mathematical context 
 | No backend/API calls | Fully static deployment; zero runtime infrastructure required |
 | No database | All data is client-side code or user input |
 | No React Router | Simplifies deployment (single file) and reduces dependencies |
+| TypeScript only | Type safety and better IDE support for all code |
 
 ---
 
 ## 10. Future Considerations
 
-- **Config-driven system registry**: Replace manual `pages`/`navItems` arrays with a single source of truth
-- **Index validation**: Add runtime checks for index ranges in `UniversalLotto`
-- **CSV export**: Allow users to download ticket rows as a file
-- **Number permutation generation**: Add helper tools for generating guaranteed coverings
-
----
-*Last updated based on `vite-plugin-singlefile` 2.1.0 and Tailwind CSS v4.3.*# Lotto System Visualization - Summary Report & Improvement Plan
-
-This document analyzes the existing `lotto-ui` application, focusing on its current structure, implementation patterns, maintenance considerations, and areas for improvement. The project demonstrates a functional core but exhibits opportunities to enhance scalability, maintainability, and developer experience through architectural refactoring and adoption of modern best practices.
-
----
-## 1. Project Overview
-
-**Project Name**: Lotto UI
-**Framework Stack**: React 19 + Vite 8 + Tailwind CSS 4.3
-**Purpose**: Interactive visualization platform for lottery combination systems, allowing users to input numbers and visualize winning combinations with status indicators
-
-### Current Architecture
-- **Page Routing**: Manual routing using `currentPage` state in App.jsx (simulated navigation)
-- **Component Pattern**: Multiple duplicated entry-point components for each lottery system
-- **State Management**: Local component state only (useState hooks)
-- **UI Library**: Custom components built with Radix UI primitives and Tailwind CSS
+- **Ball styling consolidation**: Move inline ball styles to CSS classes in `index.css`
+- **Component extraction**: Break down LottoGame.tsx into smaller hooks/components
+- **Accessibility improvements**: Add ARIA labels, focus management, skip links
+- **Design tokens**: Create `src/lib/design-tokens.ts` for animation timings, easing curves, breakpoints
 
 ---
 
-## 2. Critical Architecture Issues
+## 11. Version History
 
-### 2.1 Component Duplication (DRY Violation)
-The project contains multiple entry-point components with identical patterns:
-- `Lotto649.jsx`, `Lotto658.jsx`, `Lotto758.jsx`, etc.
-- All follow the same structure: import → data definition → render `<UniversalLotto />`
+| Version | Date | Changes |
+|---------|------|---------|
+| 2.0 | 2026-06-17 | TypeScript migration complete; documentation updated |
+| 1.4 | 2026-06-15 | Dependency audit and upgrade recommendations |
+| 1.3 | 2026-06-15 | Removed `UniversalLotto.tsx` duplicate component |
+| 1.0 | 2026-06-04 | Initial comprehensive refactor guide |
 
-**Impact**: 
-- High maintenance burden (each new system requires a new file)
-- Inconsistent data management
-- Duplicate code across ~7+ similar components
+---
 
-### 2.2 Missing Router Implementation
-**Current**: State-based navigation in App.jsx
+*Last updated: 2026-06-17*
