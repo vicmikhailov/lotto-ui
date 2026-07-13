@@ -13,7 +13,7 @@ interface BottomBarProps {
 export default function BottomBar({ currentPage, setCurrentPage }: BottomBarProps) {
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden">
-      <div className="flex items-center justify-around border-t bg-background/95 backdrop-blur px-4 py-2 safe-area-pb">
+      <div className="flex items-center justify-around border-t bg-background/95 backdrop-blur px-4 py-2">
         {bottomNavItems.map((item) => (
           <button
             key={item.id}

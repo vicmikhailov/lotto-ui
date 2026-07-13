@@ -88,7 +88,8 @@ function App() {
 
         <main className={cn(
           "flex-1 overflow-auto transition-all duration-300",
-          isOpen ? "md:ml-64" : "md:ml-16"
+          isOpen ? "md:ml-64" : "md:ml-16",
+          "pb-20 md:pb-0"
         )}>
         <div className="mx-auto min-h-dvh max-w-6xl px-6 py-8 sm:px-10 lg:px-12">
           {currentPage === 'home' && (

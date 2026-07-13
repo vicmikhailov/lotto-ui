@@ -123,12 +123,12 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
   }, [columnCount, columnIndex, isTransitioning])
 
   return (
-    <div ref={cardRef} className="border-border/50 shadow-sm relative min-w-0 w-full max-w-[400px]">
+    <div ref={cardRef} className="border-border/50 shadow-sm relative min-w-0 w-full max-w-100">
       <Card className="border-transparent shadow-none">
         <div className="absolute top-1 left-2 text-[10px] text-muted-foreground/50 font-medium">
           {rowIndex + 1}
         </div>
-      <CardContent className="flex items-center gap-3 py-3 px-3 sm:px-4 pr-8 sm:pr-6 flex-nowrap">
+      <CardContent className="flex items-center gap-2 py-3 px-2 sm:px-4 pr-2 sm:pr-4 flex-nowrap">
         <div className="flex items-center gap-2 shrink-0">
           <div className="flex gap-1 shrink-0 pl-1">
             {row.map((numIndex, itemIndex) => {
@@ -152,11 +152,11 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
             })}
           </div>
         </div>
-        <div className="h-10 flex items-center shrink-0">
+        <div className="h-10 flex items-center ml-auto shrink-0">
           <Badge
             variant="secondary"
             className={cn(
-              "size-9 sm:size-10 rounded-md flex items-center justify-center text-sm font-bold p-0 shadow-sm",
+              "size-8 sm:size-9 rounded-md flex items-center justify-center text-xs font-bold p-0 shadow-sm",
               getCountBadgeClass(count)
             )}
           >
@@ -174,7 +174,7 @@ const SummaryItem = memo(({ countLabel, countValue }: { countLabel: string; coun
     <div className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-white px-1 py-1 shadow-sm shrink-0 dark:bg-card">
       {/* Label - ball when count > 0, flat button when count = 0 */}
       <div className={cn(
-        'inline-flex h-7 min-w-[2rem] items-center justify-center rounded-full px-2 text-sm font-bold leading-none border-0 cursor-default shrink-0',
+        'inline-flex h-7 min-w-8 items-center justify-center rounded-full px-2 text-sm font-bold leading-none border-0 cursor-default shrink-0',
         countValue === 0
           ? 'bg-muted text-muted-foreground'
           : 'ball-ivory text-slate-800'
@@ -182,7 +182,7 @@ const SummaryItem = memo(({ countLabel, countValue }: { countLabel: string; coun
         {countLabel}
       </div>
       {/* Count value - stays as plain number */}
-      <span className="inline-flex h-7 min-w-[2.5rem] items-center justify-center rounded-md px-2 text-sm font-bold leading-none shrink-0">
+      <span className="inline-flex h-7 min-w-10 items-center justify-center rounded-md px-2 text-sm font-bold leading-none shrink-0">
         {countValue}
       </span>
     </div>
@@ -626,7 +626,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pb-4 px-3 sm:px-4">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-1 sm:gap-1">
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-2 sm:gap-1">
             {values.map((value, index) => (
               <SystemInputCell
                 key={index}
@@ -634,7 +634,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
                 value={value}
                 isButtonMode={isLocked || false}
                 isActive={activeEntries[index] || false}
-                isGolden={(goldenBallIndex === index ? true : false) as boolean}
+                isGolden={(goldenBallIndex === index) as boolean}
                 hasError={showValidationMessage && (duplicateIndices.has(index) || outOfRangeIndices.has(index))}
                 onValueChange={handleInputChange}
                 onPaste={handlePaste}
@@ -678,7 +678,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
 
       <div className="rounded-xl border border-border bg-muted/10 p- sm:p-5 relative">
         <CardLabel label="Results" />
-        <div ref={resultsContainerRef} className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),380px))] gap-3 pt-2 overflow-x-auto">
+        <div ref={resultsContainerRef} className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),380px))] gap-3 pt-6 sm:pt-7 overflow-x-auto">
           {data.map((row, rowIndex) => (
             <LottoRow
               key={rowIndex}

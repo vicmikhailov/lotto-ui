@@ -4,15 +4,15 @@ import { cn } from '@/lib/utils'
 import type { SystemInputCellProps } from '@/types'
 
 const ballActive =
-  'size-9 sm:size-10 rounded-full font-semibold transition-all border-0 ' +
+  'size-10 sm:size-11 rounded-full font-semibold transition-all border-0 ' +
   'ball-ivory text-slate-800 hover:scale-110'
 
 const ballGold =
-  'size-9 sm:size-10 rounded-full font-semibold transition-all border-0 ' +
+  'size-10 sm:size-11 rounded-full font-semibold transition-all border-0 ' +
   'ball-gold text-amber-900 hover:scale-110'
 
 const ballInactive =
-  'size-9 sm:size-10 rounded-full font-medium transition-all border-0 ' +
+  'size-10 sm:size-11 rounded-full font-medium transition-all border-0 ' +
   'ball-inactive hover:scale-105'
 
 const DOUBLE_TAP_DELAY_MS = 250
@@ -143,7 +143,7 @@ export default memo(function SystemInputCell({
             }
           }}
           className={cn(
-            'h-9 w-11 sm:h-10 sm:w-12 rounded-md border bg-background text-center text-xs sm:text-sm font-semibold transition-all focus:outline-none focus:ring-2',
+            'h-10 w-11 sm:h-11 sm:w-12 rounded-md border bg-background text-center text-sm font-semibold transition-all focus:outline-none focus:ring-2',
             hasError
               ? 'border-destructive/60 focus:ring-destructive/20'
               : 'border-border focus:ring-primary/20'
