@@ -13,11 +13,6 @@ import Lotto7510 from '@/components/Lotto7510'
 import Lotto7511 from '@/components/Lotto7511'
 
 /**
- * Game category types for visual differentiation
- */
-export type GameCategory = '64x' | '65x' | '75x'
-
-/**
  * Array of available lotto pages
  */
 export const PAGES: PageConfig[] = [
