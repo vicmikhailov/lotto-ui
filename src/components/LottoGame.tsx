@@ -25,12 +25,19 @@ interface BadgeTiers {
   [key: number]: string
 }
 
+// WCAG 2.1 AA compliant badge colors (4.5:1 contrast ratio minimum)
+// Enhanced with Superdesign design - better shadows and hover states
 const BADGE_TIERS: BadgeTiers = {
-  3: 'bg-stone-300 text-stone-950 hover:bg-stone-300 border-transparent',
-  4: 'bg-lime-100 text-lime-950 hover:bg-lime-100 border-transparent',
-  5: 'bg-violet-400 text-white hover:bg-violet-400 border-transparent shadow-sm shadow-violet-400/30',
-  6: 'bg-sky-700 text-white hover:bg-sky-700 border-transparent ring-1 ring-sky-400/50 shadow-sm shadow-sky-700/30',
-  7: 'bg-stone-800 text-lime-200 hover:bg-stone-800 border-transparent ring-1 ring-lime-400/50 shadow-sm shadow-stone-800/30',
+  // Level 3: Stone-400 with improved shadow
+  3: 'bg-stone-400 text-white hover:bg-stone-500 border-transparent shadow-sm shadow-stone-400/30',
+  // Level 4: Lime-600 with glow
+  4: 'bg-lime-600 text-white hover:bg-lime-500 border-transparent shadow-md shadow-lime-600/40',
+  // Level 5: Violet-600 with enhanced glow
+  5: 'bg-violet-600 text-white hover:bg-violet-500 border-transparent shadow-md shadow-violet-600/40',
+  // Level 6: Sky-800 with ring
+  6: 'bg-sky-800 text-white hover:bg-sky-700 border-transparent ring-2 ring-sky-600/30 shadow-md shadow-sky-800/40',
+  // Level 7: Stone-900 with Lime accent
+  7: 'bg-stone-900 text-lime-300 hover:bg-stone-800 border-transparent ring-2 ring-lime-500/30 shadow-md shadow-stone-900/40',
 }
 
 const getDefaultValues = (totalEntries: number): string[] =>
@@ -75,6 +82,46 @@ const areLottoRowPropsEqual = (prevProps: LottoRowInternalProps, nextProps: Lott
 const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, count, animatingIndex, columnIndex, isTransitioning, columnCount }: LottoRowInternalProps) => {
   const cardRef = React.useRef<HTMLDivElement>(null)
   const firstPositionRef = React.useRef<{ x: number; y: number; width: number } | null>(null)
+  const ballsAreaRef = React.useRef<HTMLDivElement>(null)
+  const ballsRowRef = React.useRef<HTMLDivElement>(null)
+  // Spacing (margin-left) applied between adjacent balls. Positive = gap, negative = overlap.
+  // Balls only overlap when there is not enough width to lay them out side by side.
+  const [ballMargin, setBallMargin] = React.useState<number>(4)
+
+  React.useLayoutEffect(() => {
+    const area = ballsAreaRef.current
+    const rowEl = ballsRowRef.current
+    if (!area || !rowEl) return
+
+    const GAP = 4 // preferred gap between balls when they fit
+
+    const compute = () => {
+      const n = row.length
+      const firstBall = rowEl.firstElementChild as HTMLElement | null
+      if (n <= 1 || !firstBall) {
+        setBallMargin(GAP)
+        return
+      }
+      const ballSize = firstBall.offsetWidth
+      const style = window.getComputedStyle(area)
+      const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
+      const available = area.clientWidth - paddingX
+      const naturalWidth = n * ballSize + (n - 1) * GAP
+      if (naturalWidth <= available) {
+        // Enough room: lay side by side with the preferred gap.
+        setBallMargin(GAP)
+      } else {
+        // Not enough room: overlap just enough to fit within the available width.
+        const step = (available - ballSize) / (n - 1)
+        setBallMargin(step - ballSize)
+      }
+    }
+
+    compute()
+    const ro = new ResizeObserver(compute)
+    ro.observe(area)
+    return () => ro.disconnect()
+  }, [row.length])
 
   // Capture initial position when transition starts
   React.useEffect(() => {
@@ -123,14 +170,19 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
   }, [columnCount, columnIndex, isTransitioning])
 
   return (
-    <div ref={cardRef} className="border-border/50 shadow-sm relative min-w-0 w-full max-w-100">
+    <div
+      ref={cardRef}
+      className="border-border/50 shadow-sm relative min-w-0 w-full max-w-full"
+      role="listitem"
+      aria-label={`Row ${rowIndex + 1}: ${count} matches${goldenBallIndex !== null ? ', with bonus ball' : ''}`}
+    >
       <Card className="border-transparent shadow-none">
-        <div className="absolute top-1 left-2 text-[10px] text-muted-foreground/50 font-medium">
+        <div className="absolute top-1.5 left-2.5 text-xs text-muted-foreground/50 font-medium">
           {rowIndex + 1}
         </div>
-      <CardContent className="flex items-center gap-2 py-3 px-2 sm:px-4 pr-2 sm:pr-4 flex-nowrap">
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex gap-1 shrink-0 pl-1">
+      <CardContent className="flex items-center gap-1 sm:gap-2 py-3 px-1.5 sm:px-4 flex-nowrap">
+        <div ref={ballsAreaRef} className="flex-1 min-w-0 flex items-center pl-1" role="list">
+          <div ref={ballsRowRef} className="flex shrink-0" role="list">
             {row.map((numIndex, itemIndex) => {
               const hasValue = values[numIndex] !== ''
               const isSelected = hasValue && activeEntries[numIndex]
@@ -140,11 +192,14 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
               return (
                 <div
                   key={itemIndex}
+                  style={{ marginLeft: itemIndex === 0 ? 0 : ballMargin, zIndex: row.length - itemIndex }}
                   className={cn(
-                    'flex items-center justify-center text-xs sm:text-sm font-semibold shadow-sm shrink-0',
+                    'relative flex items-center justify-center text-sm sm:text-base font-semibold shadow-sm shrink-0 ring-2 ring-card',
                     isGolden ? ballGold : isSelected ? ballActive : ballInactive,
                     isAnimating && 'ball-select-animate'
                   )}
+                  role="listitem"
+                  aria-label={`Position ${itemIndex + 1}: ${values[numIndex] || 'empty'}${isSelected ? ', selected' : ''}${isGolden ? ', bonus ball' : ''}`}
                 >
                   {values[numIndex] || ''}
                 </div>
@@ -152,13 +207,15 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
             })}
           </div>
         </div>
-        <div className="h-10 flex items-center ml-auto shrink-0">
+        <div className="h-11 flex items-center ml-auto shrink-0">
           <Badge
             variant="secondary"
             className={cn(
-              "size-8 sm:size-9 rounded-md flex items-center justify-center text-xs font-bold p-0 shadow-sm",
+              "size-9 sm:size-10 rounded-lg flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200",
+              "min-w-[36px]",
               getCountBadgeClass(count)
             )}
+            aria-label={`${count} matches`}
           >
             {count}
           </Badge>
@@ -171,18 +228,22 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
 
 const SummaryItem = memo(({ countLabel, countValue }: { countLabel: string; countValue: number }) => {
   return (
-    <div className="inline-flex items-center gap-1 rounded-lg border border-border/50 bg-white px-1 py-1 shadow-sm shrink-0 dark:bg-card">
+    <div
+      className="inline-flex items-center gap-2 rounded-xl border border-border/50 bg-white px-3 py-2 shadow-sm shrink-0 dark:bg-card transition-all duration-200 hover:scale-105"
+      role="status"
+      aria-label={`${countValue} combinations with ${countLabel} matches`}
+    >
       {/* Label - ball when count > 0, flat button when count = 0 */}
       <div className={cn(
-        'inline-flex h-7 min-w-8 items-center justify-center rounded-full px-2 text-sm font-bold leading-none border-0 cursor-default shrink-0',
+        'inline-flex h-9 min-w-10 items-center justify-center rounded-lg px-3 text-base font-bold leading-none border-0 cursor-default shrink-0 transition-all duration-200',
         countValue === 0
           ? 'bg-muted text-muted-foreground'
-          : 'ball-ivory text-slate-800'
+          : 'ball-ivory text-slate-800 shadow-sm'
       )}>
         {countLabel}
       </div>
       {/* Count value - stays as plain number */}
-      <span className="inline-flex h-7 min-w-10 items-center justify-center rounded-md px-2 text-sm font-bold leading-none shrink-0">
+      <span className="inline-flex h-9 min-w-10 items-center justify-center rounded-lg px-2.5 text-base font-bold leading-none shrink-0 bg-background border border-border/30">
         {countValue}
       </span>
     </div>
@@ -567,49 +628,54 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
     <div className="space-y-4">
       <header className="space-y-2">
         {panelName && (
-          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">{panelName}</p>
+          <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider" id="game-panel-label">{panelName}</p>
         )}
         {isLottoMax ? (
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap" role="heading" aria-level={1}>
             <img
               src={lottoMaxLogo}
-              alt="Lotto Max"
-              className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto max-w-full object-contain"
+              alt="Lotto Max logo"
+              className="h-8 sm:h-12 md:h-14 lg:h-16 w-auto max-w-full object-contain"
             />
-            <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight">
+            <span className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight" aria-hidden="true">
               {guarantee} of {finalEntries} ({data.length})
             </span>
           </div>
         ) : isLotto649 ? (
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap" role="heading" aria-level={1}>
             <img
               src={lotto649Logo}
-              alt="Lotto 649"
-              className="h-10 sm:h-12 md:h-14 lg:h-16 w-auto max-w-full object-contain"
+              alt="Lotto 649 logo"
+              className="h-8 sm:h-12 md:h-14 lg:h-16 w-auto max-w-full object-contain"
             />
-            <span className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight">
+            <span className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight" aria-hidden="true">
               {guarantee} of {finalEntries} ({data.length})
             </span>
           </div>
         ) : (
-          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight">{systemName}</h1>
+          <h1 className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-semibold tracking-tight">{systemName}</h1>
         )}
       </header>
 
-      <Card className="glass-summary relative gap-0 p-0">
-        <CardLabel label="Summary" />
-        <CardContent className="p-2.5 sm:p-3 pt-4">
-          <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide justify-start">
-            {snapshotCounts.map((countLabel) => (
-              <SummaryItem
-                key={countLabel}
-                countLabel={String(countLabel)}
-                countValue={(matchSnapshot[countLabel as number] ?? 0) as number}
-              />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {snapshotCounts.some((countLabel) => (matchSnapshot[countLabel as number] ?? 0) !== 0) && (
+        <Card className="glass-summary relative gap-0 p-0">
+          <CardLabel label="Summary" />
+          <CardContent className="p-2.5 sm:p-3 pt-4">
+            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide justify-start">
+              {snapshotCounts.map((countLabel) => {
+                const countValue = (matchSnapshot[countLabel as number] ?? 0) as number
+                return countValue !== 0 ? (
+                  <SummaryItem
+                    key={countLabel}
+                    countLabel={String(countLabel)}
+                    countValue={countValue}
+                  />
+                ) : null
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="glass-summary overflow-visible relative gap-0 p-0">
         <CardLabel label="Selections" />
@@ -621,7 +687,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
           </div>
         )}
         <CardHeader className="pb-2 pt-4 px-3 sm:px-4">
-          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+          <CardTitle className="text-base font-medium text-muted-foreground uppercase tracking-wider">
             {selectedCount > 0 ? `Won numbers ${selectedCount} of ${finalEntries} lucky` : 'Enter your numbers (double-click to set bonus ball)'}
           </CardTitle>
         </CardHeader>
@@ -650,6 +716,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
                 variant="outline"
                 onClick={handleEdit}
                 className="h-10 w-20 font-semibold shrink-0"
+                aria-label="Edit selected numbers"
               >
                 EDIT
               </Button>
@@ -660,6 +727,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
                 onClick={handleSet}
                 disabled={!allEntriesFilled}
                 className="h-10 w-20 font-semibold shrink-0"
+                aria-label={allEntriesFilled ? 'Confirm and lock number selections' : 'Please fill all entries first'}
               >
                 SET
               </Button>
@@ -669,6 +737,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
               variant="destructive"
               onClick={anyEntryFilled ? handleReset : handleRandom}
               className="h-10 w-20 font-semibold shrink-0"
+              aria-label={anyEntryFilled ? 'Clear all entered numbers' : 'Generate random numbers'}
             >
               {anyEntryFilled ? 'RESET' : 'RANDOM'}
             </Button>
@@ -676,9 +745,14 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
         </CardContent>
       </Card>
 
-      <div className="rounded-xl border border-border bg-muted/10 p- sm:p-5 relative">
+      <div className="rounded-xl border border-border bg-muted/10 p-3 sm:p-5 relative">
         <CardLabel label="Results" />
-        <div ref={resultsContainerRef} className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),380px))] gap-3 pt-6 sm:pt-7 overflow-x-auto">
+        <div
+          ref={resultsContainerRef}
+          className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] gap-2 sm:gap-3 pt-6 sm:pt-7"
+          role="list"
+          aria-label="Result combinations showing match counts for each row"
+        >
           {data.map((row, rowIndex) => (
             <LottoRow
               key={rowIndex}

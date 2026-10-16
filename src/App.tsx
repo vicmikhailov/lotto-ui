@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo } from 'react'
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import {
   Card,
   CardDescription,
@@ -72,8 +72,24 @@ function App() {
     return (newState: LottoGameState) => handleStateChange(currentPage, newState)
   }, [currentPage, handleStateChange])
 
+  // Focus management - return focus to main content on page change
+  const mainRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (mainRef.current) {
+      // Set focus with a small delay to ensure DOM is ready
+      const timeoutId = setTimeout(() => {
+        mainRef.current?.focus()
+      }, 100)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [currentPage])
+
   return (
     <>
+      <a href="#main-content" className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:bg-primary focus:text-white focus:px-4 focus:py-2 focus:rounded-lg">
+        Skip to main content
+      </a>
       <div className="flex min-h-dvh bg-background text-foreground transition-colors duration-300">
         <Sidebar
           currentPage={currentPage}
@@ -86,63 +102,63 @@ function App() {
 
         <BottomBar currentPage={currentPage} setCurrentPage={setCurrentPage} />
 
-        <main className={cn(
+        <main ref={mainRef} className={cn(
           "flex-1 overflow-auto transition-all duration-300",
           isOpen ? "md:ml-64" : "md:ml-16",
           "pb-20 md:pb-0"
-        )}>
-        <div className="mx-auto min-h-dvh max-w-6xl px-6 py-8 sm:px-10 lg:px-12">
-          {currentPage === 'home' && (
-            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
-              {PAGES.filter(page => page.id !== 'about').map((page, idx) => (
-                <Card
-                  key={page.id}
-                  className={cn(
-                    "cursor-pointer border-0 rounded-xl overflow-hidden",
-                    "card-enhanced-hover group",
-                    "animate-card-entry",
-                    getAnimationDelayClass(idx)
-                  )}
-                  onClick={() => setCurrentPage(page.id)}
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                  <CardHeader className="flex flex-row items-center gap-4 space-y-0 relative z-10">
-                    <div className="flex size-12 items-center justify-center rounded-full bg-primary/5 text-primary transition-all duration-300 group-hover:bg-primary/10 shadow-sm">
-                      {page.id.includes('-') ? (
-                        <LottoIcon label={page.label} className="size-7" />
-                      ) : (
-                        <page.icon className="size-6" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-xl sm:text-2xl truncate">{page.label}</CardTitle>
-                      <CardDescription className="text-xs sm:text-sm">Tap to play</CardDescription>
-                    </div>
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
-          )}
-
-          {currentPage === 'about' && (
-            <div className="animate-in fade-in duration-500">
-              <About />
-            </div>
-          )}
-
-          {currentPage !== 'home' && currentPage !== 'about' && (() => {
-            const SelectedLottoComponent = LOTTO_COMPONENTS[currentPage]
-            return SelectedLottoComponent ? (
-              <div className="animate-in fade-in duration-500">
-                <LottoComponentRenderer
-                  component={SelectedLottoComponent}
-                  persistedState={gameStates[currentPage] ?? null}
-                  onStateChange={currentPageStateHandler ?? null}
-                />
+        )} id="main-content" role="main" tabIndex={-1} aria-label="Main content area">
+          <div className="mx-auto min-h-dvh max-w-6xl px-6 py-8 sm:px-10 lg:px-12">
+            {currentPage === 'home' && (
+              <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-2">
+                {PAGES.filter(page => page.id !== 'about').map((page, idx) => (
+                  <Card
+                    key={page.id}
+                    className={cn(
+                      "cursor-pointer border-0 rounded-xl overflow-hidden",
+                      "card-enhanced-hover group",
+                      "animate-card-entry",
+                      getAnimationDelayClass(idx)
+                    )}
+                    onClick={() => setCurrentPage(page.id)}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                    <CardHeader className="flex flex-row items-center gap-4 space-y-0 relative z-10">
+                      <div className="flex size-12 items-center justify-center rounded-full bg-primary/5 text-primary transition-all duration-300 group-hover:bg-primary/10 shadow-sm">
+                        {page.id.includes('-') ? (
+                          <LottoIcon label={page.label} className="size-7" />
+                        ) : (
+                          <page.icon className="size-6" />
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-xl sm:text-2xl truncate">{page.label}</CardTitle>
+                        <CardDescription className="text-xs sm:text-sm">Tap to play</CardDescription>
+                      </div>
+                    </CardHeader>
+                  </Card>
+                ))}
               </div>
-            ) : null
-          })()}
-        </div>
+            )}
+
+            {currentPage === 'about' && (
+              <div className="animate-in fade-in duration-500" role="region" aria-label="About page">
+                <About />
+              </div>
+            )}
+
+            {currentPage !== 'home' && currentPage !== 'about' && (() => {
+              const SelectedLottoComponent = LOTTO_COMPONENTS[currentPage]
+              return SelectedLottoComponent ? (
+                <div className="animate-in fade-in duration-500">
+                  <LottoComponentRenderer
+                    component={SelectedLottoComponent}
+                    persistedState={gameStates[currentPage] ?? null}
+                    onStateChange={currentPageStateHandler ?? null}
+                  />
+                </div>
+              ) : null
+            })()}
+          </div>
         </main>
       </div>
     </>

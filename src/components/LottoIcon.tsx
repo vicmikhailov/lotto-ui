@@ -19,9 +19,9 @@ const LottoIcon = memo(function LottoIcon({ label, className }: LottoIconProps) 
       "hover:bg-primary hover:text-primary-foreground hover:border-primary hover:scale-110 hover:shadow-md",
       className
     )}>
-      <span className="transition-transform duration-300 -translate-y-[15%] text-[0.65rem]">{n1}</span>
+      <span className="transition-transform duration-300 translate-y-[-15%] text-[0.65rem]">{n1}</span>
       <span className="transition-transform duration-300 translate-y-[15%] text-[0.65rem] opacity-80 group-hover:opacity-100">{n2}</span>
-      <span className="transition-transform duration-300 -translate-y-[15%] text-[0.65rem]">{n3}</span>
+      <span className="transition-transform duration-300 translate-y-[-15%] text-[0.65rem]">{n3}</span>
     </div>
   )
 })

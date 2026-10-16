@@ -65,6 +65,7 @@ return (
         <div
           className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm md:hidden"
           onClick={() => setIsOpen(false)}
+          aria-hidden="true"
         />
       )}
 
@@ -76,6 +77,8 @@ return (
           isOpen && isMobile && "left-[240px]"
         )}
         onClick={toggleSidebar}
+        aria-label={isOpen ? "Close sidebar" : "Open sidebar"}
+        aria-expanded={isOpen}
       >
         {isOpen ? <X className="size-5" /> : <Menu className="size-5" />}
       </Button>
@@ -88,15 +91,17 @@ return (
           isMobile && !isOpen && "-translate-x-full",
           isMobile && isOpen && "translate-x-0"
         )}
+        aria-label="Main navigation sidebar"
       >
-        <nav className="flex-1 space-y-2 p-2 pt-3">
+        <nav className="flex-1 space-y-2 p-2 pt-3" aria-label="Sidebar menu">
           {/* Home row - click to open sidebar */}
           <div className="flex items-center gap-2">
             <Button
               variant={currentPage === 'home' ? "secondary" : "ghost"}
               className={cn(
                 "flex-1 justify-start gap-3 group relative overflow-hidden transition-all duration-300",
-                !isOpen && "justify-center px-0",
+                // WCAG 2.5.5: Touch targets at least 44x44px
+                !isOpen && "justify-center px-0 min-h-[44px]",
                 currentPage === 'home'
                   ? "bg-gradient-to-r from-primary/15 via-primary/10 to-transparent"
                   : "hover:bg-muted/50 hover:translate-x-0.5"
@@ -109,6 +114,7 @@ return (
                   if (isMobile) setIsOpen(false)
                 }
               }}
+              aria-current={currentPage === 'home' ? 'page' : undefined}
             >
               {/* Active indicator bar */}
               {currentPage === 'home' && isOpen && (
@@ -129,9 +135,9 @@ return (
               <Button
                 variant="ghost"
                 size="icon"
-                className="shrink-0"
+                className="shrink-0 min-h-[44px] min-w-[44px]"
                 onClick={() => setIsOpen(false)}
-                title="Close sidebar"
+                aria-label="Close sidebar"
               >
                 <ChevronLeft className="size-4" />
               </Button>
@@ -145,7 +151,8 @@ return (
               variant={currentPage === item.id ? "secondary" : "ghost"}
               className={cn(
                 "w-full justify-start gap-3 group relative overflow-hidden transition-all duration-300",
-                !isOpen && "justify-center px-0",
+                // WCAG 2.5.5: Touch targets at least 44x44px
+                !isOpen && "justify-center px-0 min-h-[44px]",
                 currentPage === item.id
                   ? "bg-gradient-to-r from-primary/15 via-primary/10 to-transparent"
                   : "hover:bg-muted/50 hover:translate-x-0.5"
@@ -154,6 +161,7 @@ return (
                 setCurrentPage(item.id)
                 if (isMobile) setIsOpen(false)
               }}
+              aria-current={currentPage === item.id ? 'page' : undefined}
             >
               {/* Active indicator bar */}
               {currentPage === item.id && isOpen && (
@@ -180,10 +188,12 @@ return (
           <Button
             variant="ghost"
             className={cn(
-              "w-full justify-start gap-3",
+              // WCAG 2.5.5: Touch targets at least 44x44px
+              "w-full justify-start gap-3 min-h-[44px]",
               !isOpen && "justify-center px-0"
             )}
             onClick={() => setDarkMode(!darkMode)}
+            aria-label={darkMode ? "Switch to light mode" : "Switch to dark mode"}
           >
             <div className="size-9 rounded-full flex items-center justify-center shrink-0 border-0 ball-ivory text-slate-800">
               {darkMode ? (

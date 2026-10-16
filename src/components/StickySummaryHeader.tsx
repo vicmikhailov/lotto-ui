@@ -28,17 +28,26 @@ interface StickySummaryHeaderProps {
 }
 
 export default function StickySummaryHeader({ snapshotCounts, matchSnapshot }: StickySummaryHeaderProps) {
+  const hasAnyMatches = snapshotCounts.some((countLabel) => (matchSnapshot[countLabel as number] ?? 0) !== 0)
+
+  if (!hasAnyMatches) {
+    return null
+  }
+
   return (
     <Card className="border-0 bg-transparent shadow-none sticky top-[56px] md:top-14 z-40">
       <CardContent className="p-0 py-1">
         <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide justify-start">
-          {snapshotCounts.map((countLabel) => (
-            <SummaryItem
-              key={countLabel}
-              countLabel={String(countLabel)}
-              countValue={(matchSnapshot[countLabel as number] ?? 0) as number}
-            />
-          ))}
+          {snapshotCounts.map((countLabel) => {
+            const countValue = (matchSnapshot[countLabel as number] ?? 0) as number
+            return countValue !== 0 ? (
+              <SummaryItem
+                key={countLabel}
+                countLabel={String(countLabel)}
+                countValue={countValue}
+              />
+            ) : null
+          })}
         </div>
       </CardContent>
     </Card>
