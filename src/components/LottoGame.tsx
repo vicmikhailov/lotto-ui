@@ -9,17 +9,19 @@ import SystemInputCell from './SystemInputCell'
 import lottoMaxLogo from '@/assets/lotto-max-logo.png'
 import lotto649Logo from '@/assets/lotto-649-logo.png'
 
+// Balls keep their aspect ratio and may shrink below their nominal size. Fixed sizes with
+// shrink-0 made a long row spill out of the card and paint over the match-count badge.
 const ballActive =
-  'size-9 sm:size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
-  'ball-ivory text-slate-800 hover:scale-110 '
+  'aspect-square w-[36px] sm:w-[40px] rounded-full font-semibold transition-all cursor-default border-0 flex items-center justify-center ' +
+  'ball-ivory text-slate-800 hover:scale-110'
 
 const ballGold =
-  'size-9 sm:size-10 rounded-full font-semibold transition-all cursor-default border-0 ' +
-  'ball-gold text-amber-900 hover:scale-110 '
+  'aspect-square w-[36px] sm:w-[40px] rounded-full font-semibold transition-all cursor-default border-0 flex items-center justify-center ' +
+  'ball-gold text-amber-900 hover:scale-110'
 
 const ballInactive =
-  'size-9 sm:size-10 rounded-full font-medium transition-all cursor-default border-0 ' +
-  'ball-inactive hover:scale-105 '
+  'aspect-square w-[36px] sm:w-[40px] rounded-full font-medium transition-all cursor-default border-0 flex items-center justify-center ' +
+  'ball-inactive text-slate-700 dark:text-slate-300 hover:scale-105'
 
 interface BadgeTiers {
   [key: number]: string
@@ -82,46 +84,6 @@ const areLottoRowPropsEqual = (prevProps: LottoRowInternalProps, nextProps: Lott
 const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, count, animatingIndex, columnIndex, isTransitioning, columnCount }: LottoRowInternalProps) => {
   const cardRef = React.useRef<HTMLDivElement>(null)
   const firstPositionRef = React.useRef<{ x: number; y: number; width: number } | null>(null)
-  const ballsAreaRef = React.useRef<HTMLDivElement>(null)
-  const ballsRowRef = React.useRef<HTMLDivElement>(null)
-  // Spacing (margin-left) applied between adjacent balls. Positive = gap, negative = overlap.
-  // Balls only overlap when there is not enough width to lay them out side by side.
-  const [ballMargin, setBallMargin] = React.useState<number>(4)
-
-  React.useLayoutEffect(() => {
-    const area = ballsAreaRef.current
-    const rowEl = ballsRowRef.current
-    if (!area || !rowEl) return
-
-    const GAP = 4 // preferred gap between balls when they fit
-
-    const compute = () => {
-      const n = row.length
-      const firstBall = rowEl.firstElementChild as HTMLElement | null
-      if (n <= 1 || !firstBall) {
-        setBallMargin(GAP)
-        return
-      }
-      const ballSize = firstBall.offsetWidth
-      const style = window.getComputedStyle(area)
-      const paddingX = parseFloat(style.paddingLeft) + parseFloat(style.paddingRight)
-      const available = area.clientWidth - paddingX
-      const naturalWidth = n * ballSize + (n - 1) * GAP
-      if (naturalWidth <= available) {
-        // Enough room: lay side by side with the preferred gap.
-        setBallMargin(GAP)
-      } else {
-        // Not enough room: overlap just enough to fit within the available width.
-        const step = (available - ballSize) / (n - 1)
-        setBallMargin(step - ballSize)
-      }
-    }
-
-    compute()
-    const ro = new ResizeObserver(compute)
-    ro.observe(area)
-    return () => ro.disconnect()
-  }, [row.length])
 
   // Capture initial position when transition starts
   React.useEffect(() => {
@@ -180,9 +142,9 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
         <div className="absolute top-1.5 left-2.5 text-xs text-muted-foreground/50 font-medium">
           {rowIndex + 1}
         </div>
-      <CardContent className="flex items-center gap-1 sm:gap-2 py-3 px-1.5 sm:px-4 flex-nowrap">
-        <div ref={ballsAreaRef} className="flex-1 min-w-0 flex items-center pl-1" role="list">
-          <div ref={ballsRowRef} className="flex shrink-0" role="list">
+      <CardContent className="flex items-center gap-1 sm:gap-2 py-3 px-1.5 sm:px-4 flex-nowrap min-w-0">
+        <div className="flex-1 min-w-0 flex items-center pl-1" role="list">
+          <div className="flex min-w-0 items-center gap-1 sm:gap-2" role="list">
             {row.map((numIndex, itemIndex) => {
               const hasValue = values[numIndex] !== ''
               const isSelected = hasValue && activeEntries[numIndex]
@@ -192,9 +154,8 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
               return (
                 <div
                   key={itemIndex}
-                  style={{ marginLeft: itemIndex === 0 ? 0 : ballMargin, zIndex: row.length - itemIndex }}
                   className={cn(
-                    'relative flex items-center justify-center text-sm sm:text-base font-semibold shadow-sm shrink-0 ring-2 ring-card',
+                    'relative',
                     isGolden ? ballGold : isSelected ? ballActive : ballInactive,
                     isAnimating && 'ball-select-animate'
                   )}
@@ -207,12 +168,11 @@ const LottoRow = memo(({ row, rowIndex, values, activeEntries, goldenBallIndex, 
             })}
           </div>
         </div>
-        <div className="h-11 flex items-center ml-auto shrink-0">
+        <div className="h-[36px] sm:h-[40px] flex items-center ml-auto shrink-0">
           <Badge
             variant="secondary"
             className={cn(
-              "size-9 sm:size-10 rounded-lg flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200",
-              "min-w-[36px]",
+              "w-[36px] h-[36px] sm:w-[40px] sm:h-[40px] rounded-lg flex items-center justify-center text-sm font-bold shadow-md transition-all duration-200 shrink-0",
               getCountBadgeClass(count)
             )}
             aria-label={`${count} matches`}
@@ -235,7 +195,7 @@ const SummaryItem = memo(({ countLabel, countValue }: { countLabel: string; coun
     >
       {/* Label - ball when count > 0, flat button when count = 0 */}
       <div className={cn(
-        'inline-flex h-9 min-w-10 items-center justify-center rounded-lg px-3 text-base font-bold leading-none border-0 cursor-default shrink-0 transition-all duration-200',
+        'inline-flex w-[36px] h-[36px] min-w-[36px] items-center justify-center rounded-lg px-3 text-base font-bold leading-none border-0 cursor-default shrink-0 transition-all duration-200',
         countValue === 0
           ? 'bg-muted text-muted-foreground'
           : 'ball-ivory text-slate-800 shadow-sm'
@@ -243,7 +203,7 @@ const SummaryItem = memo(({ countLabel, countValue }: { countLabel: string; coun
         {countLabel}
       </div>
       {/* Count value - stays as plain number */}
-      <span className="inline-flex h-9 min-w-10 items-center justify-center rounded-lg px-2.5 text-base font-bold leading-none shrink-0 bg-background border border-border/30">
+      <span className="inline-flex w-[36px] h-[36px] min-w-[36px] items-center justify-center rounded-lg px-2.5 text-base font-bold leading-none shrink-0 bg-background border border-border/30">
         {countValue}
       </span>
     </div>
@@ -406,6 +366,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
 
   const isLottoMax = combinationSize === 7
   const isLotto649 = combinationSize === 6
+  const maxNumber = isLottoMax ? 50 : 49
 
   const handleInputChange = useCallback((index: number, value: string) => {
     const sanitizedValue = value.replace(/[^0-9]/g, '')
@@ -428,7 +389,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
 
   const handlePaste = useCallback((startIndex: number, event: React.ClipboardEvent<HTMLInputElement>) => {
     const pastedText = event.clipboardData.getData('text')
-    const numbers = pastedText.split(/[\^0-9]+/).filter(n => n !== '')
+    const numbers = pastedText.split(/[^0-9]+/).filter(n => n !== '')
 
     if (numbers.length > 1) {
       event.preventDefault()
@@ -477,7 +438,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
         }
 
         const numericValue = Number(value)
-        if (Number.isNaN(numericValue) || numericValue < 1 || numericValue > 52) {
+        if (Number.isNaN(numericValue) || numericValue < 1 || numericValue > maxNumber) {
           rangeIndices.add(index)
         }
       }
@@ -488,14 +449,14 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
       outOfRangeIndices: rangeIndices,
       hasValidationErrors: dupIndices.size > 0 || rangeIndices.size > 0
     }
-  }, [values])
+  }, [values, maxNumber])
 
   const validationMessages = useMemo(() => {
     return [
       duplicateIndices.size > 0 ? 'Entries must not contain duplicate numbers.' : null,
-      outOfRangeIndices.size > 0 ? 'Numbers must be between 1 and 52.' : null,
+      outOfRangeIndices.size > 0 ? `Numbers must be between 1 and ${maxNumber}.` : null,
     ].filter(Boolean)
-  }, [duplicateIndices.size, outOfRangeIndices.size])
+  }, [duplicateIndices.size, outOfRangeIndices.size, maxNumber])
 
   const shouldShowValidationMessage = hasValidationErrors && showValidationMessage
 
@@ -562,7 +523,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
   }, [finalEntries])
 
   const handleRandom = useCallback(() => {
-    const pool = Array.from({ length: 52 }, (_, i) => i + 1)
+    const pool = Array.from({ length: maxNumber }, (_, i) => i + 1)
     const result: number[] = []
     for (let i = 0; i < finalEntries && pool.length > 0; i++) {
       const randomIndex = Math.floor(Math.random() * pool.length)
@@ -577,7 +538,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
     setShowValidationMessage(false)
     setActiveEntries(Array.from({ length: finalEntries }, () => false))
     setGoldenBallIndex(null)
-  }, [finalEntries])
+  }, [finalEntries, maxNumber])
 
   const handleReset = useCallback(() => {
     setShowValidationMessage(false)
@@ -624,9 +585,14 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
 
   const selectedCount = useMemo(() => activeEntries.filter((entry) => entry).length, [activeEntries])
 
+  const hasSummaryResults = useMemo(
+    () => snapshotCounts.some((countLabel) => (matchSnapshot[countLabel] ?? 0) !== 0),
+    [snapshotCounts, matchSnapshot]
+  )
+
   return (
-    <div className="space-y-4">
-      <header className="space-y-2">
+    <div className="space-y-4 max-w-full">
+      <header className="space-y-2 min-w-0">
         {panelName && (
           <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider" id="game-panel-label">{panelName}</p>
         )}
@@ -657,12 +623,13 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
         )}
       </header>
 
-      {snapshotCounts.some((countLabel) => (matchSnapshot[countLabel as number] ?? 0) !== 0) && (
-        <Card className="glass-summary relative gap-0 p-0">
-          <CardLabel label="Summary" />
-          <CardContent className="p-2.5 sm:p-3 pt-4">
-            <div className="flex items-center gap-1 overflow-x-auto scrollbar-hide justify-start">
-              {snapshotCounts.map((countLabel) => {
+      <Card className="glass-summary relative gap-0 p-0">
+        <CardLabel label="Summary" />
+        <CardContent className="p-2.5 sm:p-3 pt-4">
+          {/* Height is pinned to the summary tile height so the card never resizes when results arrive */}
+          <div className="flex min-h-[54px] items-center gap-1 overflow-x-auto scrollbar-hide justify-start">
+            {hasSummaryResults ? (
+              snapshotCounts.map((countLabel) => {
                 const countValue = (matchSnapshot[countLabel as number] ?? 0) as number
                 return countValue !== 0 ? (
                   <SummaryItem
@@ -671,11 +638,13 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
                     countValue={countValue}
                   />
                 ) : null
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              })
+            ) : (
+              <p className="text-sm font-medium text-muted-foreground">Select your numbers</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="glass-summary overflow-visible relative gap-0 p-0">
         <CardLabel label="Selections" />
@@ -687,12 +656,12 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
           </div>
         )}
         <CardHeader className="pb-2 pt-4 px-3 sm:px-4">
-          <CardTitle className="text-base font-medium text-muted-foreground uppercase tracking-wider">
+          <CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
             {selectedCount > 0 ? `Won numbers ${selectedCount} of ${finalEntries} lucky` : 'Enter your numbers (double-click to set bonus ball)'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 pb-4 px-3 sm:px-4">
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(3.5rem,1fr))] gap-2 sm:gap-1">
+          <div data-lotto-input-grid className="grid grid-cols-[repeat(auto-fill,minmax(56px,1fr))] gap-2 sm:gap-1 min-w-max">
             {values.map((value, index) => (
               <SystemInputCell
                 key={index}
@@ -749,7 +718,7 @@ export default function LottoGame({ data, guarantee, entries, panelName, persist
         <CardLabel label="Results" />
         <div
           ref={resultsContainerRef}
-          className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,380px),1fr))] gap-2 sm:gap-3 pt-6 sm:pt-7"
+          className="grid grid-cols-[repeat(auto-fill,minmax(340px,1fr))] gap-2 sm:gap-3 pt-6 sm:pt-7"
           role="list"
           aria-label="Result combinations showing match counts for each row"
         >

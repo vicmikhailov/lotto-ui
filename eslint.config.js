@@ -8,7 +8,16 @@ import { defineConfig } from 'eslint/config'
 export default defineConfig([
   // Global ignores
   {
-    ignores: ['dist', 'dist-ssr', 'release'],
+    ignores: [
+      'dist',
+      'dist-ssr',
+      'release',
+      '.claude/**',
+      '.jbeval/**',
+      '.junie/**',
+      '.remember/**',
+      '.superdesign/**',
+    ],
   },
   // TypeScript files
   {

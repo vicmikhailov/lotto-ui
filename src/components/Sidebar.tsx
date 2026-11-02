@@ -53,7 +53,7 @@ export default memo(function Sidebar({
 // Sidebar icon ball styles - matching game balls with ivory look
 const sidebarBallInactive =
   'size-9 rounded-full flex items-center justify-center shrink-0 border-0 ' +
-  'ball-inactive text-slate-400/60 hover:scale-105 transition-all'
+  'ball-inactive text-slate-400/60 dark:text-slate-300 hover:scale-105 transition-all'
 
 const sidebarBallActive =
   'size-9 rounded-full flex items-center justify-center shrink-0 border-0 ' +

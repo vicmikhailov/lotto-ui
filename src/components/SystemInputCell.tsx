@@ -13,7 +13,7 @@ const ballGold =
 
 const ballInactive =
   'size-9 sm:size-12 rounded-full font-medium transition-all border-0 ' +
-  'ball-inactive hover:scale-105'
+  'ball-inactive text-slate-700 dark:text-slate-300 hover:scale-105'
 
 const DOUBLE_TAP_DELAY_MS = 250
 
@@ -91,7 +91,7 @@ export default memo(function SystemInputCell({
   }, [index, isGolden, onDoubleToggle])
 
   // Enhanced keyboard navigation with arrow keys
-  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLButtonElement>) => {
+  const handleKeyDown = useCallback((event: React.KeyboardEvent<HTMLButtonElement | HTMLInputElement>) => {
     // Shift+Enter or Shift+Space for double-toggle (bonus ball)
     if (event.shiftKey && (event.key === 'Enter' || event.key === ' ')) {
       event.preventDefault()
@@ -99,35 +99,44 @@ export default memo(function SystemInputCell({
       return
     }
 
-    // Arrow key navigation between inputs
-    const inputElements = document.querySelectorAll('[data-lotto-input]')
-    const currentIndex = Array.from(inputElements).indexOf(event.currentTarget as unknown as Element)
+    const inputGrid = event.currentTarget.closest<HTMLElement>('[data-lotto-input-grid]')
+    if (!inputGrid) return
+
+    const inputElements = inputGrid.querySelectorAll<HTMLElement>('[data-lotto-input]')
+    const currentIndex = Number(event.currentTarget.dataset['entry'])
+    const columnCount = window.getComputedStyle(inputGrid).gridTemplateColumns.split(/\s+/).length
+    const focusEntry = (entryIndex: number) => inputElements[entryIndex]?.focus()
+    const input = event.currentTarget instanceof HTMLInputElement ? event.currentTarget : null
 
     switch (event.key) {
       case 'ArrowRight':
+        if (input && (input.selectionStart !== input.selectionEnd || input.selectionEnd !== input.value.length)) {
+          break
+        }
         event.preventDefault()
         if (currentIndex < inputElements.length - 1) {
-          ;(inputElements[currentIndex + 1] as HTMLElement)?.focus()
+          focusEntry(currentIndex + 1)
         }
         break
       case 'ArrowLeft':
+        if (input && (input.selectionStart !== input.selectionEnd || input.selectionStart !== 0)) {
+          break
+        }
         event.preventDefault()
         if (currentIndex > 0) {
-          ;(inputElements[currentIndex - 1] as HTMLElement)?.focus()
+          focusEntry(currentIndex - 1)
         }
         break
       case 'ArrowUp':
         event.preventDefault()
-        // Navigate up by 5 (assuming ~5 columns in grid)
-        if (currentIndex >= 5) {
-          ;(inputElements[currentIndex - 5] as HTMLElement)?.focus()
+        if (currentIndex >= columnCount) {
+          focusEntry(currentIndex - columnCount)
         }
         break
       case 'ArrowDown':
         event.preventDefault()
-        // Navigate down by 5 (assuming ~5 columns in grid)
-        if (currentIndex < inputElements.length - 5) {
-          ;(inputElements[currentIndex + 5] as HTMLElement)?.focus()
+        if (currentIndex + columnCount < inputElements.length) {
+          focusEntry(currentIndex + columnCount)
         }
         break
     }
@@ -173,6 +182,7 @@ export default memo(function SystemInputCell({
           value={value}
           onChange={(e) => onValueChange(index, e.target.value)}
           onPaste={(e) => onPaste?.(index, e)}
+          onKeyDown={handleKeyDown}
           onClick={() => {
             const now = Date.now()
             if (now - lastTapTimeRef.current <= DOUBLE_TAP_DELAY_MS) {

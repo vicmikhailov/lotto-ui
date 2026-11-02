@@ -114,12 +114,20 @@ function App() {
                   <Card
                     key={page.id}
                     className={cn(
-                      "cursor-pointer border-0 rounded-xl overflow-hidden",
+                      "cursor-pointer border-0 rounded-xl overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
                       "card-enhanced-hover group",
                       "animate-card-entry",
                       getAnimationDelayClass(idx)
                     )}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setCurrentPage(page.id)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault()
+                        setCurrentPage(page.id)
+                      }
+                    }}
                   >
                     <div className="absolute inset-0 bg-gradient-to-br from-white/15 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
                     <CardHeader className="flex flex-row items-center gap-4 space-y-0 relative z-10">
